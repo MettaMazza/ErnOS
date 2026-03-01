@@ -1,6 +1,7 @@
 import { systemMemory } from "../memory/orchestrator.js";
 import { getAutobiographyManager } from "../memory/autobiography.js";
 import { kgConsolidator } from "./kg-consolidator.js";
+import { AutonomousNeuroplasticity } from "../memory/knowledge-graph/neuroplasticity.js";
 
 export class DreamConsolidationDaemon {
   /**
@@ -33,10 +34,23 @@ export class DreamConsolidationDaemon {
         `  -> Reconciled: ${reconciled.stats.lessons} lessons, ${reconciled.stats.kg} KG facts, ${reconciled.stats.conflicts} conflicts found.`,
       );
 
-      // 2. Synaptic Decay
+      // 2. Synaptic Decay (Phase 1 — Mathematical Homeostasis)
       console.log(`[Dream Consolidation] Step 2: Decaying unused synaptic pathways in KG...`);
       const decayedCount = await systemMemory.knowledgeGraph.decayConnections();
       console.log(`  -> Decayed ${decayedCount} pathways.`);
+
+      // 2.5. LLM Semantic Review (Phase 2 — NeuroForm Neuroplasticity)
+      //      After mathematical decay, the surviving edges are sampled and
+      //      presented to the LLM for autonomous PRUNE/STRENGTHEN/DECAY decisions.
+      console.log(`[Dream Consolidation] Step 2.5: Running LLM neuroplasticity review (Phase 2)...`);
+      const neuroEngine = new AutonomousNeuroplasticity(
+        systemMemory.knowledgeGraph.getDriver(),
+        kgConsolidator.getGenerator() ?? undefined,
+      );
+      const neuroResult = await neuroEngine.evaluateAndOptimize();
+      console.log(
+        `  -> Phase 2: ${neuroResult.phase2Actions} LLM actions, ${neuroResult.decisions.length} decisions. Status: ${neuroResult.status}`,
+      );
 
       // 3. Process Validation Quarantine
       console.log(`[Dream Consolidation] Step 3: Processing knowledge quarantine queue...`);

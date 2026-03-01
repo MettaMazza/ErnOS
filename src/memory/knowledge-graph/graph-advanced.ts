@@ -484,3 +484,92 @@ export async function checkUserHasData(
     await session.close();
   }
 }
+
+// ─── NeuroForm Phase 2: LLM Neuroplasticity Helpers ────────────────────────────
+
+export interface GraphEdgeSample {
+  source: string;
+  relation: string;
+  target: string;
+  strength: number | null;
+}
+
+/**
+ * Fetch a sample of graph edges for LLM semantic review.
+ * Returns edges ordered by strength ascending (weakest first) so the LLM
+ * reviews the most vulnerable memories.
+ */
+export async function fetchGraphSample(
+  driver: Driver | null,
+  limit: number = 50,
+): Promise<GraphEdgeSample[]> {
+  if (!driver) {return [];}
+
+  const query = `
+    MATCH (a)-[r]->(b)
+    WHERE type(r) <> 'IN_LAYER' AND type(r) <> 'PEER_LAYER' AND type(r) <> 'CONTAINS'
+      AND NOT a.name STARTS WITH 'Root:' AND NOT b.name STARTS WITH 'Root:'
+    RETURN a.name AS source, type(r) AS relation, b.name AS target, r.strength AS strength
+    ORDER BY r.strength ASC
+    LIMIT $limit
+  `;
+
+  const session = driver.session();
+  try {
+    const res = await session.run(query, { limit });
+    return res.records.map((rec) => ({
+      source: rec.get("source"),
+      relation: rec.get("relation"),
+      target: rec.get("target"),
+      strength: rec.get("strength"),
+    }));
+  } catch (error) {
+    console.error("Error fetching graph sample:", error);
+    return [];
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Execute a single LLM neuroplasticity decision on the graph.
+ *
+ * - PRUNE: Delete the relationship entirely (contradiction removal)
+ * - STRENGTHEN: Boost strength by +0.5 (Long-Term Potentiation)
+ * - DECAY: Reduce strength by -0.2 (Long-Term Depression)
+ */
+export async function executeLlmGraphAction(
+  driver: Driver | null,
+  action: "PRUNE" | "STRENGTHEN" | "DECAY",
+  source: string,
+  relation: string,
+  target: string,
+): Promise<boolean> {
+  if (!driver) {return false;}
+
+  const cleanRel = relation.replace(/[^A-Za-z0-9_]/g, "").toUpperCase() || "RELATED_TO";
+
+  let query: string;
+  switch (action) {
+    case "PRUNE":
+      query = `MATCH (a {name: $src})-[r]->(b {name: $tgt}) WHERE type(r) = $rel DELETE r`;
+      break;
+    case "STRENGTHEN":
+      query = `MATCH (a {name: $src})-[r]->(b {name: $tgt}) WHERE type(r) = $rel SET r.strength = coalesce(r.strength, 1.0) + 0.5, r.last_fired = timestamp()`;
+      break;
+    case "DECAY":
+      query = `MATCH (a {name: $src})-[r]->(b {name: $tgt}) WHERE type(r) = $rel SET r.strength = coalesce(r.strength, 1.0) - 0.2`;
+      break;
+  }
+
+  const session = driver.session();
+  try {
+    await session.run(query, { src: source, tgt: target, rel: cleanRel });
+    return true;
+  } catch (error) {
+    console.error(`[Neuroplasticity] Failed ${action} on ${source}->${target}:`, error);
+    return false;
+  } finally {
+    await session.close();
+  }
+}

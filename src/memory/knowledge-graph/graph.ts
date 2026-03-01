@@ -13,6 +13,11 @@ export class KnowledgeGraph {
     this.connect();
   }
 
+  /** Public accessor for the Neo4j driver (used by neuroplasticity engine). */
+  public getDriver(): Driver | null {
+    return this.driver;
+  }
+
   private connect() {
     const uri = process.env.NEO4J_URI || "bolt://localhost:7687";
     const user = process.env.NEO4J_USER || "neo4j";

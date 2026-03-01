@@ -58,6 +58,11 @@ export class KGConsolidator {
     this.generateResponse = fn;
   }
 
+  /** Public accessor for the LLM generator (used by neuroplasticity engine). */
+  public getGenerator(): LLMGenerator | null {
+    return this.generateResponse;
+  }
+
   // ─── Turn Recording ──────────────────────────────────────────────────
 
   /**

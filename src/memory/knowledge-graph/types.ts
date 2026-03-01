@@ -18,3 +18,14 @@ export interface LayerMeta {
   parent?: string;
   created: string;
 }
+
+/**
+ * Structured decision from the LLM neuroplasticity review loop.
+ * The LLM evaluates surviving graph edges and returns an array of these.
+ */
+export interface NeuroplasticityDecision {
+  action: "PRUNE" | "STRENGTHEN" | "DECAY";
+  source: string;
+  relation: string;
+  target: string;
+}
