@@ -113,9 +113,10 @@ if ! cmd_exists ollama; then
     else
         sudo systemctl enable --now ollama || true
     fi
-    echo -e "${GREEN}Ollama installed. Pulling default model (llama3.2:1b for speed)...${NC}"
+    echo -e "${GREEN}Ollama installed. Pulling default model (qwen2.5:32b for ErnOS cognition)...${NC}"
+    echo -e "${YELLOW}Note: This is a heavy model (19GB+) required for advanced reasoning. This may take a while.${NC}"
     sleep 3
-    ollama pull llama3.2:1b
+    ollama pull qwen2.5:32b
 else
     echo -e "${GREEN}Ollama is already installed.${NC}"
 fi
