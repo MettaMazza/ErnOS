@@ -8,6 +8,7 @@ export {
   isAcpSessionKey,
   isSubagentSessionKey,
   parseAgentSessionKey,
+  extractPeerIdFromSessionKey,
   type ParsedAgentSessionKey,
 } from "../sessions/session-key-utils.js";
 export {

@@ -5,6 +5,7 @@ import { resolveMemoryBackendConfig } from "../../memory/backend-config.js";
 import { getMemorySearchManager } from "../../memory/index.js";
 import type { MemorySearchResult } from "../../memory/types.js";
 import { parseAgentSessionKey } from "../../routing/session-key.js";
+import { extractPeerIdFromSessionKey } from "../../sessions/session-key-utils.js";
 import { resolveSessionAgentId } from "../agent-scope.js";
 import { resolveMemorySearchConfig } from "../memory-search.js";
 import type { AnyAgentTool } from "./common.js";
@@ -74,8 +75,10 @@ export function createMemorySearchTool(options: {
           minScore,
           sessionKey: options.agentSessionKey,
         });
+        // Per-user memory isolation: filter out results from other users' directories
+        const scopedResults = filterResultsByUserScope(rawResults, options.agentSessionKey);
         const status = manager.status();
-        const decorated = decorateCitations(rawResults, includeCitations);
+        const decorated = decorateCitations(scopedResults, includeCitations);
         const resolved = resolveMemoryBackendConfig({ cfg, agentId });
         const results =
           status.backend === "qmd"
@@ -239,4 +242,34 @@ function deriveChatTypeFromSessionKey(sessionKey?: string): "direct" | "group" |
     return "group";
   }
   return "direct";
+}
+
+/**
+ * Per-user memory isolation filter.
+ * Strips out memory results that belong to other users' scoped directories.
+ *
+ * Rules:
+ * - Paths under `memory/users/{userId}/` are only visible to that user
+ * - System-level files (MEMORY.md, memory.md, non-user-scoped paths) are visible to all
+ * - If no peerId can be extracted from the session key, all results pass through
+ */
+function filterResultsByUserScope(
+  results: MemorySearchResult[],
+  sessionKey?: string,
+): MemorySearchResult[] {
+  const peerId = extractPeerIdFromSessionKey(sessionKey);
+  if (!peerId) {
+    // No peer scoping available (cron, subagent, etc.) — return all results
+    return results;
+  }
+  const userPrefix = `memory/users/${peerId}/`;
+  return results.filter((entry) => {
+    const normalized = (entry.path ?? "").replace(/\\/g, "/").toLowerCase();
+    // If this is a user-scoped path, only include if it's THIS user's directory
+    if (normalized.startsWith("memory/users/")) {
+      return normalized.startsWith(userPrefix);
+    }
+    // System-level files and non-user-scoped paths are always visible
+    return true;
+  });
 }

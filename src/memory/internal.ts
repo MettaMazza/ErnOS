@@ -80,12 +80,14 @@ async function walkDir(dir: string, files: string[]) {
 export async function listMemoryFiles(
   workspaceDir: string,
   extraPaths?: string[],
+  /** When set, scope memory search to this user's directory only. */
+  peerId?: string | null,
 ): Promise<string[]> {
   const result: string[] = [];
   const memoryFile = path.join(workspaceDir, "MEMORY.md");
   const altMemoryFile = path.join(workspaceDir, "memory.md");
-  const memoryDir = path.join(workspaceDir, "memory");
 
+  // MEMORY.md and memory.md are system-level shared files — always included
   const addMarkdownFile = async (absPath: string) => {
     try {
       const stat = await fs.lstat(absPath);
@@ -101,6 +103,13 @@ export async function listMemoryFiles(
 
   await addMarkdownFile(memoryFile);
   await addMarkdownFile(altMemoryFile);
+
+  // Per-user scoping: if peerId is set, ONLY search that user's memory directory.
+  // If no peerId, fall back to shared memory/ for compatibility (cron, subagents, etc.)
+  const memoryDir = peerId
+    ? path.join(workspaceDir, "memory", "users", peerId)
+    : path.join(workspaceDir, "memory");
+
   try {
     const dirStat = await fs.lstat(memoryDir);
     if (!dirStat.isSymbolicLink() && dirStat.isDirectory()) {

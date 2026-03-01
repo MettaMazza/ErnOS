@@ -130,3 +130,28 @@ export function resolveThreadParentSessionKey(
   const parent = raw.slice(0, idx).trim();
   return parent ? parent : null;
 }
+
+/**
+ * Extract the peer (user) ID from a session key that uses per-peer DM scoping.
+ * Session key formats containing a peer ID:
+ *   - agent:{agentId}:direct:{peerId}               (per-peer)
+ *   - agent:{agentId}:{channel}:direct:{peerId}      (per-channel-peer)
+ *   - agent:{agentId}:{channel}:{account}:direct:{peerId}  (per-account-channel-peer)
+ *
+ * Returns the peer ID portion, or null if the key doesn't contain one.
+ */
+export function extractPeerIdFromSessionKey(sessionKey: string | undefined | null): string | null {
+  const raw = (sessionKey ?? "").trim().toLowerCase();
+  if (!raw) {
+    return null;
+  }
+  const directIdx = raw.indexOf(":direct:");
+  if (directIdx < 0) {
+    return null;
+  }
+  const afterDirect = raw.slice(directIdx + ":direct:".length);
+  // Peer ID is everything until the next colon (or end of string),
+  // but stop at known suffixes like :thread: or :subagent:
+  const peerId = afterDirect.split(":")[0]?.trim();
+  return peerId || null;
+}

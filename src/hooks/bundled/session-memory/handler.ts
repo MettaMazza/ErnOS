@@ -12,7 +12,10 @@ import { resolveAgentWorkspaceDir } from "../../../agents/agent-scope.js";
 import type { ErnOSConfig } from "../../../config/config.js";
 import { resolveStateDir } from "../../../config/paths.js";
 import { createSubsystemLogger } from "../../../logging/subsystem.js";
-import { resolveAgentIdFromSessionKey } from "../../../routing/session-key.js";
+import {
+  resolveAgentIdFromSessionKey,
+  extractPeerIdFromSessionKey,
+} from "../../../routing/session-key.js";
 import { hasInterSessionUserProvenance } from "../../../sessions/input-provenance.js";
 import { resolveHookConfig } from "../../config.js";
 import type { HookHandler } from "../../hooks.js";
@@ -185,7 +188,12 @@ const saveSessionToMemory: HookHandler = async (event) => {
     const workspaceDir = cfg
       ? resolveAgentWorkspaceDir(cfg, agentId)
       : path.join(resolveStateDir(process.env, os.homedir), "workspace");
-    const memoryDir = path.join(workspaceDir, "memory");
+    // Scope memory files per-user using the peer ID from the session key.
+    // This ensures each user's memory is isolated and not accessible to other users.
+    const peerId = extractPeerIdFromSessionKey(event.sessionKey);
+    const memoryDir = peerId
+      ? path.join(workspaceDir, "memory", "users", peerId)
+      : path.join(workspaceDir, "memory");
     await fs.mkdir(memoryDir, { recursive: true });
 
     // Get today's date for filename

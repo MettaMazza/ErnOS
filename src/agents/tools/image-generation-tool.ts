@@ -39,7 +39,8 @@ export async function generateImage(params: {
   if (!apiKey && !localApiUrl) {
     return {
       success: false,
-      error: "No OPENAI_API_KEY or LOCAL_IMAGE_API_URL configured. Image generation requires either OpenAI API key or a local API URL.",
+      error:
+        "No OPENAI_API_KEY or LOCAL_IMAGE_API_URL configured. Image generation requires either OpenAI API key or a local API URL.",
       provider: "none",
     };
   }
@@ -54,28 +55,57 @@ export async function generateImage(params: {
   const outputPath = path.join(outputDir, filename);
 
   if (localApiUrl) {
-    console.log(`[ImageGen] Generating via Local API: "${prompt.slice(0, 80)}..."`);
+    // Auto-detect endpoint: if the URL doesn't already include /sdapi/, append the txt2img path.
+    // Supports Automatic1111/Forge running local Flux or any SD model.
+    const apiUrl = localApiUrl.includes("/sdapi/")
+      ? localApiUrl
+      : `${localApiUrl.replace(/\/+$/, "")}/sdapi/v1/txt2img`;
+
+    const width = size.startsWith("1792") ? 1792 : 1024;
+    const height = size.endsWith("1792") ? 1792 : 1024;
+
+    console.log(`[ImageGen] Generating via Local Forge API: ${apiUrl}`);
+    console.log(`[ImageGen] Prompt: "${prompt.slice(0, 120)}..." (${width}x${height})`);
+
     try {
-      const width = size.startsWith("1792") ? 1792 : 1024;
-      const height = size.endsWith("1792") ? 1792 : 1024;
-      
-      const response = await fetch(localApiUrl, {
+      // Local Flux generation can take 30-120s depending on hardware — generous timeout.
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 180_000);
+
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           prompt,
+          negative_prompt: "low quality, worst quality, deformed, distorted, watermark, blurry",
           width,
           height,
+          steps: 20,
+          cfg_scale: 7,
+          sampler_name: "Euler a",
         }),
       });
 
+      clearTimeout(timeout);
+
       if (!response.ok) {
-        return { success: false, error: `Local API error (${response.status}): ${await response.text()}`, provider: "local" };
+        const errBody = await response.text().catch(() => "(unreadable)");
+        console.error(`[ImageGen] Local API error (${response.status}): ${errBody.slice(0, 500)}`);
+        return {
+          success: false,
+          error: `Local API error (${response.status}): ${errBody.slice(0, 300)}`,
+          provider: "local",
+        };
       }
 
       const data = (await response.json()) as { images?: string[] };
       if (!data.images?.[0]) {
-        return { success: false, error: "No image data returned from Local API.", provider: "local" };
+        return {
+          success: false,
+          error: "No image data returned from Local API.",
+          provider: "local",
+        };
       }
 
       const buffer = Buffer.from(data.images[0], "base64");
@@ -84,12 +114,20 @@ export async function generateImage(params: {
       console.log(`[ImageGen] ✅ Image saved: ${outputPath}`);
 
       return { success: true, path: outputPath, provider: "local" };
-    } catch (error) {
-      return { success: false, error: `Local image generation failed: ${error}`, provider: "local" };
+    } catch (error: unknown) {
+      const err = error as { name?: string };
+      const msg =
+        err?.name === "AbortError"
+          ? "Local image generation timed out after 180s. Is Forge running?"
+          : `Local image generation failed: ${String(error)}`;
+      console.error(`[ImageGen] ${msg}`);
+      return { success: false, error: msg, provider: "local" };
     }
   }
 
-  console.log(`[ImageGen] Generating via OpenAI: "${prompt.slice(0, 80)}..." (${model}, ${size}, ${quality})`);
+  console.log(
+    `[ImageGen] Generating via OpenAI: "${prompt.slice(0, 80)}..." (${model}, ${size}, ${quality})`,
+  );
 
   try {
     const response = await fetch("https://api.openai.com/v1/images/generations", {
@@ -151,7 +189,7 @@ export async function generateImage(params: {
   } catch (error) {
     return {
       success: false,
-      error: `Image generation failed: ${error}`,
+      error: `Image generation failed: ${String(error)}`,
       provider: "openai",
     };
   }
