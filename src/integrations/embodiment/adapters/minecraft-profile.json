@@ -1,0 +1,9 @@
+{
+  "name": "ErnOS",
+  "host": "localhost",
+  "port": 55916,
+  "version": "1.21.4",
+  "auth": "offline",
+  "perceptionRadius": 32,
+  "autoReconnect": true
+}

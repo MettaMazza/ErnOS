@@ -123,3 +123,4 @@ dist/protocol.schema.json
 .venv/
 scripts/.venv-kokoro/
 ErnosClaw/
+src/integrations/embodiment/mindcraft/
