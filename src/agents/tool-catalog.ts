@@ -36,6 +36,7 @@ const CORE_TOOL_SECTION_ORDER: Array<{ id: string; label: string }> = [
   { id: "nodes", label: "Nodes" },
   { id: "agents", label: "Agents" },
   { id: "media", label: "Media" },
+  { id: "embodiment", label: "Embodiment" },
 ];
 
 const CORE_TOOL_DEFINITIONS: CoreToolDefinition[] = [
@@ -262,6 +263,38 @@ const CORE_TOOL_DEFINITIONS: CoreToolDefinition[] = [
     label: "tts",
     description: "Text-to-speech conversion",
     sectionId: "media",
+    profiles: [],
+    includeInErnOSGroup: true,
+  },
+  {
+    id: "embodiment_act",
+    label: "embodiment_act",
+    description: "Execute an action in a virtual environment (Minecraft, etc.)",
+    sectionId: "embodiment",
+    profiles: [],
+    includeInErnOSGroup: true,
+  },
+  {
+    id: "embodiment_observe",
+    label: "embodiment_observe",
+    description: "Get world state snapshot (position, health, inventory)",
+    sectionId: "embodiment",
+    profiles: [],
+    includeInErnOSGroup: true,
+  },
+  {
+    id: "embodiment_navigate",
+    label: "embodiment_navigate",
+    description: "Navigate to coordinates in the virtual world",
+    sectionId: "embodiment",
+    profiles: [],
+    includeInErnOSGroup: true,
+  },
+  {
+    id: "embodiment_inventory",
+    label: "embodiment_inventory",
+    description: "List current inventory items",
+    sectionId: "embodiment",
     profiles: [],
     includeInErnOSGroup: true,
   },

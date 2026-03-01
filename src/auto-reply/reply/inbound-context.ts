@@ -137,5 +137,14 @@ export function finalizeInboundContext<T extends Record<string, unknown>>(
     }
   }
 
+  // ─── Embodiment Channel Detection ───────────────────────────────────
+  // If the message originates from an embodiment adapter (e.g. embodiment:minecraft),
+  // tag it so the kernel applies the EMBODIMENT PROTOCOL.
+  const channelLabel = (normalized.ConversationLabel || "").toString();
+  if (channelLabel.startsWith("embodiment:")) {
+    (normalized as Record<string, unknown>).isEmbodiment = true;
+    (normalized as Record<string, unknown>).embodimentEnvironment = channelLabel.split(":")[1] || "unknown";
+  }
+
   return normalized as T & FinalizedMsgContext;
 }
