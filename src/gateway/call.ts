@@ -209,7 +209,7 @@ function resolveGatewayCallTimeout(timeoutValue: unknown): {
   safeTimerTimeoutMs: number;
 } {
   const timeoutMs =
-    typeof timeoutValue === "number" && Number.isFinite(timeoutValue) ? timeoutValue : 10_000;
+    typeof timeoutValue === "number" && Number.isFinite(timeoutValue) ? timeoutValue : 5 * 60_000; // 5 minutes (was 10s)
   const safeTimerTimeoutMs = Math.max(1, Math.min(Math.floor(timeoutMs), 2_147_483_647));
   return { timeoutMs, safeTimerTimeoutMs };
 }

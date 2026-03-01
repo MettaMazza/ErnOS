@@ -20,7 +20,7 @@ export const __setMaxChatHistoryMessagesBytesForTest = (value?: number) => {
     maxChatHistoryMessagesBytes = value;
   }
 };
-export const DEFAULT_HANDSHAKE_TIMEOUT_MS = 10_000;
+export const DEFAULT_HANDSHAKE_TIMEOUT_MS = 30_000; // 30s (was 10s) — allow for Ollama cold-start on local hardware
 export const getHandshakeTimeoutMs = () => {
   if (process.env.VITEST && process.env.ERNOS_TEST_HANDSHAKE_TIMEOUT_MS) {
     const parsed = Number(process.env.ERNOS_TEST_HANDSHAKE_TIMEOUT_MS);

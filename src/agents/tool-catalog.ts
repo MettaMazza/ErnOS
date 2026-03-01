@@ -267,6 +267,14 @@ const CORE_TOOL_DEFINITIONS: CoreToolDefinition[] = [
     includeInErnOSGroup: true,
   },
   {
+    id: "image_gen",
+    label: "image_gen",
+    description: "Generate images via local Automatic1111/Forge or OpenAI DALL-E",
+    sectionId: "media",
+    profiles: [],
+    includeInErnOSGroup: true,
+  },
+  {
     id: "embodiment_act",
     label: "embodiment_act",
     description: "Execute an action in a virtual environment (Minecraft, etc.)",

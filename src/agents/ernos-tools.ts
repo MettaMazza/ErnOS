@@ -15,6 +15,7 @@ import { createGatewayTool } from "./tools/gateway-tool.js";
 import { createArtifactTools } from "./tools/artifact-tools-def.js";
 import { createGoalsTools } from "./tools/goals-tools-def.js";
 import { createImageTool } from "./tools/image-tool.js";
+import { generateImage } from "./tools/image-generation-tool.js";
 import { createIntentionTools } from "./tools/intentions-tools-def.js";
 import { createIntrospectionTools } from "./tools/introspection-tools.js";
 import { createMessageTool } from "./tools/message-tool.js";
@@ -197,6 +198,40 @@ export function createErnOSTools(options?: {
       agentAccountId: options?.agentAccountId,
     }),
     createOutreachTool() as any,
+    {
+      label: "Image Gen",
+      name: "image_gen",
+      description:
+        "Generate an image from a text prompt. Uses LOCAL_IMAGE_API_URL (Automatic1111/Forge) if configured, otherwise OpenAI DALL-E.",
+      parameters: {
+        type: "object" as const,
+        properties: {
+          prompt: { type: "string" as const, description: "Detailed description of the image to generate" },
+          size: { type: "string" as const, enum: ["1024x1024", "1024x1792", "1792x1024"], description: "Image dimensions (default: 1024x1024)" },
+          quality: { type: "string" as const, enum: ["standard", "hd"], description: "Image quality (default: standard)" },
+        },
+        required: ["prompt"],
+      },
+      execute: async (_toolCallId: string, args: unknown) => {
+        const record = args && typeof args === "object" ? (args as Record<string, unknown>) : {};
+        const prompt = typeof record.prompt === "string" ? record.prompt : "";
+        if (!prompt.trim()) {
+          return { content: [{ type: "text", text: "Error: prompt is required." }] };
+        }
+        const result = await generateImage({
+          prompt,
+          size: (record.size as "1024x1024" | "1024x1792" | "1792x1024") || "1024x1024",
+          quality: (record.quality as "standard" | "hd") || "standard",
+        });
+        if (!result.success) {
+          return { content: [{ type: "text", text: `Image generation failed: ${result.error}` }] };
+        }
+        return {
+          content: [{ type: "text", text: `Image generated successfully.\nPath: ${result.path}\nProvider: ${result.provider}` }],
+          details: { path: result.path, provider: result.provider },
+        };
+      },
+    } as AnyAgentTool,
   ];
 
   const pluginTools = resolvePluginTools({

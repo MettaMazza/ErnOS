@@ -32,7 +32,7 @@ export type GatewayCronState = {
   cronEnabled: boolean;
 };
 
-const CRON_WEBHOOK_TIMEOUT_MS = 10_000;
+const CRON_WEBHOOK_TIMEOUT_MS = 60_000; // 60s (was 10s) — local hardware can be slow
 
 function redactWebhookUrl(url: string): string {
   try {
