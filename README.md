@@ -20,6 +20,8 @@ Want to experience ErnOS before setting up the local environment? Join our commu
 3. **Hierarchical Autonomy Daemon**: ErnOS thinks while you sleep. The `AutonomyDaemon` injects your active goals into a background dream cycle during idle periods, allowing the system to compute long-term strategy and prune memory without prompting.
 4. **Local Fallback Ecosystem**: A true hybridized platform. By default, ErnOS generates images via a local Automatic1111/Forge daemon via `LOCAL_IMAGE_API_URL`, only falling back to cloud APIs when necessary.
 5. **The Observer Subsystem**: Hardened security against Prompt Injection. All outbound tool executions are silently intercepted and validated by an adjacent shadow LLM to prevent sycophancy, hallucination, or malicious drift.
+6. **Dual-Phase Neuroplasticity Engine**: The Knowledge Graph literally rewires itself. Phase 1 applies mathematical synaptic decay (Hebbian learning). Phase 2 uses LLM semantic review to autonomously `PRUNE` contradictions, `STRENGTHEN` identity facts, and `DECAY` fading memories — running nightly during Dream Consolidation.
+7. **Generalized Embodiment Harness**: ErnOS can inhabit virtual environments as a physical agent. A channel-agnostic `EmbodimentAdapter` interface routes perception events (chat, damage, proximity) and action commands (navigate, mine, craft, attack) through the same pipeline as Discord/Telegram. **Minecraft is the first adapter**, powered by Mineflayer with pathfinding, PvP, and automated block collection.
 
 ---
 
@@ -53,6 +55,8 @@ For specific operational subsystems, see the `docs/` folder:
 - [The Cognitive Layer & Dream Cycles](./docs/architecture/dream_cycles.md)
 - [The Observer & Sandbox Guardrails](./docs/architecture/security.md)
 - [Graph Memory Interfaces](./docs/architecture/memory.md)
+- [Dual-Phase Neuroplasticity Engine](./docs/architecture/neuroplasticity.md)
+- [Generalized Embodiment Harness](./docs/architecture/embodiment.md)
 
 ## 🤝 Contributing
 
