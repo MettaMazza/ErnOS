@@ -143,7 +143,7 @@ jobs:
         run: pnpm build
 
       - name: Upload dist artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dist-build
           path: dist/
@@ -232,7 +232,7 @@ jobs:
 
       - name: Upload vitest reports
         if: (github.event_name != 'push' || matrix.runtime != 'bun') && matrix.task == 'test' && matrix.runtime == 'node'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vitest-reports-${{ runner.os }}-${{ matrix.runtime }}
           path: |
@@ -296,7 +296,7 @@ jobs:
         run: ${{ matrix.command }}
 
       - name: Upload dead-code results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dead-code-${{ matrix.tool }}-${{ github.run_id }}
           path: .artifacts/deadcode
@@ -528,7 +528,7 @@ jobs:
 
       - name: Upload vitest reports
         if: matrix.task == 'test'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vitest-reports-${{ runner.os }}-${{ matrix.runtime }}-shard${{ matrix.shard_index }}of${{ matrix.shard_count }}
           path: |
