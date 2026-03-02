@@ -161,6 +161,7 @@
 ## Agent-Specific Notes
 
 - Vocabulary: "makeup" = "mac app".
+- Sub-agents: When building software or performing complex tasks, use `coder_agent` (OpenCode) for fast, targeted file editing and single-agent workflows. Use `chatdev_orchestrator` (ChatDev) for massive, multi-agent long-running architectural planning or deep research.
 - Never edit `node_modules` (global/Homebrew/npm/git installs too). Updates overwrite. Skill notes go in `tools.md` or `AGENTS.md`.
 - When adding a new `AGENTS.md` anywhere in the repo, also add a `CLAUDE.md` symlink pointing to it (example: `ln -s AGENTS.md CLAUDE.md`).
 - Signal: "update fly" => `fly ssh console -a flawd-bot -C "bash -lc 'cd /data/clawd/ernos && git pull --rebase origin main'"` then `fly machines restart e825232f34d058 -a flawd-bot`.

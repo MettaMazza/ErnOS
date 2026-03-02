@@ -3,13 +3,9 @@ import { chunkMarkdownText } from "../auto-reply/chunk.js";
 import { dispatchReplyWithBufferedBlockDispatcher } from "../auto-reply/reply/provider-dispatcher.js";
 import { createReplyPrefixOptions } from "../channels/reply-prefix.js";
 import type { ErnOSConfig } from "../config/config.js";
-import { danger, logVerbose } from "../globals.js";
 import { waitForAbortSignal } from "../infra/abort-signal.js";
-import { normalizePluginHttpPath } from "../plugins/http-path.js";
-import { registerPluginHttpRoute } from "../plugins/http-registry.js";
 import type { RuntimeEnv } from "../runtime.js";
 import { deliverLineAutoReply } from "./auto-reply-delivery.js";
-import { createLineBot } from "./bot.js";
 import { processLineMessage } from "./markdown-to-line.js";
 import { sendLineReplyChunks } from "./reply-chunks.js";
 import {
@@ -27,7 +23,6 @@ import {
 } from "./send.js";
 import { buildTemplateMessageFromPayload } from "./template-messages.js";
 import type { LineChannelData, ResolvedLineAccount } from "./types.js";
-import { createLineNodeWebhookHandler } from "./webhook-node.js";
 
 export interface MonitorLineProviderOptions {
   channelAccessToken: string;
@@ -47,17 +42,21 @@ export interface LineProviderMonitor {
 }
 
 // Track runtime state in memory (simplified version)
-const runtimeState = new Map<
-  string,
-  {
-    running: boolean;
-    lastStartAt: number | null;
-    lastStopAt: number | null;
-    lastError: string | null;
-    lastInboundAt?: number | null;
-    lastOutboundAt?: number | null;
+type RuntimeStateType = {
+  running: boolean;
+  lastStartAt: number | null;
+  lastStopAt: number | null;
+  lastError: string | null;
+  lastInboundAt?: number | null;
+  lastOutboundAt?: number | null;
+};
+var _runtimeState: Map<string, RuntimeStateType>;
+function getRuntimeState() {
+  if (!_runtimeState) {
+    _runtimeState = new Map();
   }
->();
+  return _runtimeState;
+}
 
 function recordChannelRuntimeState(params: {
   channel: string;
@@ -72,17 +71,17 @@ function recordChannelRuntimeState(params: {
   }>;
 }): void {
   const key = `${params.channel}:${params.accountId}`;
-  const existing = runtimeState.get(key) ?? {
+  const existing = getRuntimeState().get(key) ?? {
     running: false,
     lastStartAt: null,
     lastStopAt: null,
     lastError: null,
   };
-  runtimeState.set(key, { ...existing, ...params.state });
+  getRuntimeState().set(key, { ...existing, ...params.state });
 }
 
 export function getLineRuntimeState(accountId: string) {
-  return runtimeState.get(`line:${accountId}`);
+  return getRuntimeState().get(`line:${accountId}`);
 }
 
 function startLineLoadingKeepalive(params: {
@@ -141,6 +140,7 @@ export async function monitorLineProvider(
   }
 
   // Record starting state
+  const { logVerbose, danger } = await import("../globals.js");
   recordChannelRuntimeState({
     channel: "line",
     accountId: resolvedAccountId,
@@ -149,6 +149,8 @@ export async function monitorLineProvider(
       lastStartAt: Date.now(),
     },
   });
+
+  const { createLineBot } = await import("./bot.js");
 
   // Create the bot
   const bot = createLineBot({
@@ -283,6 +285,10 @@ export async function monitorLineProvider(
       }
     },
   });
+
+  const { normalizePluginHttpPath } = await import("../plugins/http-path.js");
+  const { registerPluginHttpRoute } = await import("../plugins/http-registry.js");
+  const { createLineNodeWebhookHandler } = await import("./webhook-node.js");
 
   // Register HTTP webhook handler
   const normalizedPath = normalizePluginHttpPath(webhookPath, "/line/webhook") ?? "/line/webhook";

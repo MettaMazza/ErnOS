@@ -22,6 +22,7 @@ Want to experience ErnOS before setting up the local environment? Join our commu
 5. **The Observer Subsystem**: Hardened security against Prompt Injection. All outbound tool executions are silently intercepted and validated by an adjacent shadow LLM to prevent sycophancy, hallucination, or malicious drift.
 6. **Dual-Phase Neuroplasticity Engine**: The Knowledge Graph literally rewires itself. Phase 1 applies mathematical synaptic decay (Hebbian learning). Phase 2 uses LLM semantic review to autonomously `PRUNE` contradictions, `STRENGTHEN` identity facts, and `DECAY` fading memories — running nightly during Dream Consolidation.
 7. **Generalized Embodiment Harness**: ErnOS can inhabit virtual environments as a physical agent. A channel-agnostic `EmbodimentAdapter` interface routes perception events (chat, damage, proximity) and action commands (navigate, mine, craft, attack) through the same pipeline as Discord/Telegram. **Minecraft is the first adapter**, powered by Mineflayer with pathfinding, PvP, and automated block collection.
+8. **Deep Agent Hybridization**: Natively integrates external multi-agent platforms. Includes `coder_agent` (via the OpenCode SDK) for autonomous full-project file mutation and `chatdev_orchestrator` (via ChatDev 2.0) to simulate entire virtual software development companies from within ErnOS.
 
 ---
 

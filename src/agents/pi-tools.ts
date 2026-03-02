@@ -55,6 +55,8 @@ import {
   mergeAlsoAllowPolicy,
   resolveToolProfilePolicy,
 } from "./tool-policy.js";
+import { createChatDevOrchestratorTool } from "./tools/chatdev-tool.js";
+import { createOpencodeAgentTool } from "./tools/opencode-tool.js";
 import { resolveWorkspaceRoot } from "./workspace-dir.js";
 
 function isOpenAIProvider(provider?: string) {
@@ -451,6 +453,11 @@ export function createErnOSCodingTools(options?: {
     ...(applyPatchTool ? [applyPatchTool as unknown as AnyAgentTool] : []),
     execTool as unknown as AnyAgentTool,
     processTool as unknown as AnyAgentTool,
+    createOpencodeAgentTool({ sessionKey: options?.sessionKey }) as unknown as AnyAgentTool,
+    createChatDevOrchestratorTool({
+      config: options?.config,
+      sessionKey: options?.sessionKey,
+    }) as unknown as AnyAgentTool,
     // Channel docking: include channel-defined agent tools (login, etc.).
     ...listChannelAgentTools({ cfg: options?.config }),
     ...createErnOSTools({
