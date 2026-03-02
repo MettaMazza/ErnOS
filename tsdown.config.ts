@@ -21,6 +21,7 @@ export default defineConfig([
     env,
     fixedExtension: false,
     platform: "node",
+    noExternal,
   },
   {
     // Ensure this module is bundled as an entry so legacy CLI shims can resolve its exports.
@@ -28,6 +29,7 @@ export default defineConfig([
     env,
     fixedExtension: false,
     platform: "node",
+    noExternal,
   },
   {
     entry: "src/infra/warning-filter.ts",
@@ -60,5 +62,6 @@ export default defineConfig([
     env,
     fixedExtension: false,
     platform: "node",
+    noExternal,
   },
 ]);
