@@ -4,12 +4,17 @@ const env = {
   NODE_ENV: "production",
 };
 
+// link: dependencies that export raw TypeScript source must be bundled
+// (Node.js cannot resolve their .ts files at runtime).
+const noExternal = ["@opencode-ai/sdk"];
+
 export default defineConfig([
   {
     entry: "src/index.ts",
     env,
     fixedExtension: false,
     platform: "node",
+    noExternal,
   },
   {
     entry: "src/entry.ts",
