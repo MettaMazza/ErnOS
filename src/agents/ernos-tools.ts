@@ -5,6 +5,7 @@ import { resolveSessionAgentId } from "./agent-scope.js";
 import type { SandboxFsBridge } from "./sandbox/fs-bridge.js";
 import type { ToolFsPolicy } from "./tool-fs-policy.js";
 import { createAgentsListTool } from "./tools/agents-list-tool.js";
+import { createArtifactTools } from "./tools/artifact-tools-def.js";
 import { createBrowserTool } from "./tools/browser-tool.js";
 import { createCalendarTools } from "./tools/calendar-tools-def.js";
 import { createCanvasTool } from "./tools/canvas-tool.js";
@@ -12,16 +13,17 @@ import type { AnyAgentTool } from "./tools/common.js";
 import { createCronTool } from "./tools/cron-tool.js";
 import { createDevTeamTool } from "./tools/devteam-tool.js";
 import { createGatewayTool } from "./tools/gateway-tool.js";
-import { createArtifactTools } from "./tools/artifact-tools-def.js";
 import { createGoalsTools } from "./tools/goals-tools-def.js";
-import { createImageTool } from "./tools/image-tool.js";
+import { createIdentityTunerTool } from "./tools/identity-tuner-tool.js";
 import { generateImage } from "./tools/image-generation-tool.js";
+import { createImageTool } from "./tools/image-tool.js";
 import { createIntentionTools } from "./tools/intentions-tools-def.js";
 import { createIntrospectionTools } from "./tools/introspection-tools.js";
 import { createMessageTool } from "./tools/message-tool.js";
 import { createMiscTools } from "./tools/misc-tools-def.js";
 import { createNodesTool } from "./tools/nodes-tool.js";
 import { createOutreachTool } from "./tools/outreach-tool.js";
+import { createScienceTool } from "./tools/science-tool.js";
 import { createSessionStatusTool } from "./tools/session-status-tool.js";
 import { createSessionsHistoryTool } from "./tools/sessions-history-tool.js";
 import { createSessionsListTool } from "./tools/sessions-list-tool.js";
@@ -32,8 +34,6 @@ import { createSwarmTools } from "./tools/swarm-tools-def.js";
 import { createTapeTools } from "./tools/tape-tools-def.js";
 import { createTtsTool } from "./tools/tts-tool.js";
 import { createWebFetchTool, createWebSearchTool } from "./tools/web-tools.js";
-import { createScienceTool } from "./tools/science-tool.js";
-import { createIdentityTunerTool } from "./tools/identity-tuner-tool.js";
 import { resolveWorkspaceRoot } from "./workspace-dir.js";
 
 export function createErnOSTools(options?: {
@@ -187,19 +187,21 @@ export function createErnOSTools(options?: {
     ...(webSearchTool ? [webSearchTool] : []),
     ...(webFetchTool ? [webFetchTool] : []),
     ...(imageTool ? [imageTool] : []),
-    ...(createTapeTools(options?.agentAccountId || "unknown-user") as any as AnyAgentTool[]),
-    ...(createCalendarTools(options?.agentAccountId || "unknown-user") as any as AnyAgentTool[]),
-    ...(createArtifactTools() as any as AnyAgentTool[]),
-    ...(createGoalsTools() as any as AnyAgentTool[]),
-    ...(createIntentionTools() as any as AnyAgentTool[]),
-    ...(createMiscTools(options?.agentAccountId || "unknown-user") as any as AnyAgentTool[]),
-    ...(createSwarmTools(options?.agentAccountId || "unknown-user") as any as AnyAgentTool[]),
-    ...(createIntrospectionTools() as any as AnyAgentTool[]),
+    ...(createTapeTools(options?.agentAccountId || "unknown-user") as unknown as AnyAgentTool[]),
+    ...(createCalendarTools(
+      options?.agentAccountId || "unknown-user",
+    ) as unknown as AnyAgentTool[]),
+    ...(createArtifactTools() as unknown as AnyAgentTool[]),
+    ...(createGoalsTools() as unknown as AnyAgentTool[]),
+    ...(createIntentionTools() as unknown as AnyAgentTool[]),
+    ...(createMiscTools(options?.agentAccountId || "unknown-user") as unknown as AnyAgentTool[]),
+    ...(createSwarmTools(options?.agentAccountId || "unknown-user") as unknown as AnyAgentTool[]),
+    ...(createIntrospectionTools() as unknown as AnyAgentTool[]),
     createDevTeamTool({
       config: options?.config,
       agentAccountId: options?.agentAccountId,
     }),
-    createOutreachTool() as any,
+    createOutreachTool() as unknown as AnyAgentTool,
     {
       label: "Image Gen",
       name: "image_gen",
@@ -211,9 +213,20 @@ export function createErnOSTools(options?: {
       parameters: {
         type: "object" as const,
         properties: {
-          prompt: { type: "string" as const, description: "Detailed description of the image to generate" },
-          size: { type: "string" as const, enum: ["1024x1024", "1024x1792", "1792x1024"], description: "Image dimensions (default: 1024x1024)" },
-          quality: { type: "string" as const, enum: ["standard", "hd"], description: "Image quality (default: standard)" },
+          prompt: {
+            type: "string" as const,
+            description: "Detailed description of the image to generate",
+          },
+          size: {
+            type: "string" as const,
+            enum: ["1024x1024", "1024x1792", "1792x1024"],
+            description: "Image dimensions (default: 1024x1024)",
+          },
+          quality: {
+            type: "string" as const,
+            enum: ["standard", "hd"],
+            description: "Image quality (default: standard)",
+          },
         },
         required: ["prompt"],
       },
@@ -232,7 +245,12 @@ export function createErnOSTools(options?: {
           return { content: [{ type: "text", text: `Image generation failed: ${result.error}` }] };
         }
         return {
-          content: [{ type: "text", text: `Image generated and delivered to the channel.\nMEDIA:${result.path}` }],
+          content: [
+            {
+              type: "text",
+              text: `Image generated and delivered to the channel.\nMEDIA:${result.path}`,
+            },
+          ],
           details: { path: result.path, provider: result.provider },
         };
       },
