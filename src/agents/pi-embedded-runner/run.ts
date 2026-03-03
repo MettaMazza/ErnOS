@@ -535,6 +535,86 @@ export async function runEmbeddedPiAgent(
         });
       };
       try {
+        // ── Proactive compaction ──────────────────────────────────────────
+        // Ollama (and similar local providers) accept arbitrarily large
+        // contexts without returning overflow errors — they just get slower.
+        // The reactive compaction path only fires on explicit overflow errors,
+        // so sessions grow unbounded and latency degrades linearly.
+        //
+        // This pre-flight check reads the session, estimates token usage,
+        // and triggers compaction when the session exceeds 80% of the
+        // context window — before the expensive LLM call.
+        const PROACTIVE_COMPACTION_THRESHOLD = 0.8;
+        if (params.sessionFile) {
+          try {
+            const { readSessionMessages } = await import("../../gateway/session-utils.fs.js");
+            const { estimateMessagesTokens } = await import("../compaction.js");
+            const messages = readSessionMessages(
+              params.sessionId,
+              undefined,
+              params.sessionFile,
+            ) as import("@mariozechner/pi-agent-core").AgentMessage[];
+            if (messages.length > 0) {
+              const estTokens = estimateMessagesTokens(messages);
+              const threshold = Math.floor(ctxInfo.tokens * PROACTIVE_COMPACTION_THRESHOLD);
+              if (estTokens > threshold) {
+                const diagId = createCompactionDiagId();
+                log.warn(
+                  `[proactive-compaction] sessionKey=${params.sessionKey ?? params.sessionId} ` +
+                    `provider=${provider}/${modelId} estTokens=${estTokens} ` +
+                    `threshold=${threshold} contextWindow=${ctxInfo.tokens} ` +
+                    `messages=${messages.length} diagId=${diagId} — triggering compaction`,
+                );
+                const compactResult = await compactEmbeddedPiSessionDirect({
+                  sessionId: params.sessionId,
+                  sessionKey: params.sessionKey,
+                  messageChannel: params.messageChannel,
+                  messageProvider: params.messageProvider,
+                  agentAccountId: params.agentAccountId,
+                  authProfileId: lastProfileId,
+                  sessionFile: params.sessionFile,
+                  workspaceDir: resolvedWorkspace,
+                  agentDir,
+                  config: params.config,
+                  skillsSnapshot: params.skillsSnapshot,
+                  senderIsOwner: params.senderIsOwner,
+                  provider,
+                  model: modelId,
+                  runId: params.runId,
+                  thinkLevel,
+                  reasoningLevel: params.reasoningLevel,
+                  bashElevated: params.bashElevated,
+                  extraSystemPrompt: params.extraSystemPrompt,
+                  ownerNumbers: params.ownerNumbers,
+                  trigger: "proactive",
+                  diagId,
+                  attempt: 1,
+                  maxAttempts: 1,
+                });
+                if (compactResult.compacted) {
+                  autoCompactionCount += 1;
+                  log.info(
+                    `[proactive-compaction] succeeded for ${provider}/${modelId} ` +
+                      `diagId=${diagId} — session compacted before LLM call`,
+                  );
+                } else {
+                  log.warn(
+                    `[proactive-compaction] failed for ${provider}/${modelId} ` +
+                      `diagId=${diagId}: ${compactResult.reason ?? "nothing to compact"}`,
+                  );
+                }
+              }
+            }
+          } catch (proactiveErr) {
+            // Non-fatal: if proactive compaction fails, the run continues normally.
+            // The reactive overflow fallback in the run loop still exists.
+            log.warn(
+              `[proactive-compaction] error (non-fatal): ${describeUnknownError(proactiveErr)}`,
+            );
+          }
+        }
+        // ── End proactive compaction ──────────────────────────────────────
+
         while (true) {
           if (runLoopIterations >= MAX_RUN_LOOP_ITERATIONS) {
             const message =

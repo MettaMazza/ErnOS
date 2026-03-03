@@ -114,7 +114,7 @@ export type CompactEmbeddedPiSessionParams = {
   reasoningLevel?: ReasoningLevel;
   bashElevated?: ExecElevatedDefaults;
   customInstructions?: string;
-  trigger?: "overflow" | "manual";
+  trigger?: "overflow" | "manual" | "proactive";
   diagId?: string;
   attempt?: number;
   maxAttempts?: number;
@@ -132,7 +132,7 @@ type CompactionMessageMetrics = {
   contributors: Array<{ role: string; chars: number; tool?: string }>;
 };
 
-function createCompactionDiagId(): string {
+export function createCompactionDiagId(): string {
   return `cmp-${Date.now().toString(36)}-${generateSecureToken(4)}`;
 }
 
