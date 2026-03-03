@@ -612,10 +612,10 @@ export async function ingestWebcams(lamin: number, lomin: number, lamax: number,
 
   isFetchingWebcams = true;
   try {
-    const url = `https://api.windy.com/api/webcams/v3/webcams?limit=50&bbox=${lamax},${lomin},${lamin},${lomax}&include=location,images`;
+    const url = `https://api.windy.com/webcams/api/v3/webcams?limit=50&bbox=${lamax},${lomin},${lamin},${lomax}&include=location,images`;
     const response = await fetch(url, {
       headers: {
-        "x-windy-key": WINDY_API_KEY,
+        "X-WINDY-API-KEY": WINDY_API_KEY,
       },
       signal: AbortSignal.timeout(10000),
     });

@@ -1,7 +1,10 @@
 import { z } from "zod";
 
-// ACLED API has strict date limits, defaults to recent 1 year for unauthenticated calls
-const ACLED_URL = "https://api.acleddata.com/acled/read";
+// ACLED API requires registration (free) — email + API key must be set.
+// Domain changed from api.acleddata.com to acleddata.com/api/ in 2025.
+const ACLED_URL = "https://acleddata.com/api/acled/read";
+const ACLED_API_KEY = process.env.ACLED_API_KEY || "";
+const ACLED_EMAIL = process.env.ACLED_EMAIL || "";
 const DEFAULT_LIMIT = 500;
 
 export async function getAcledEvents(
@@ -11,13 +14,23 @@ export async function getAcledEvents(
   lomax: number,
   year?: string, // YYYY
 ) {
-  // Free API requires terms agreement headers and email optionally
-  // But works with basic filters.
-
   // Construct the query
   const query = new URLSearchParams({
     limit: DEFAULT_LIMIT.toString(),
   });
+
+  // Auth params — required since ACLED moved to authenticated access
+  if (ACLED_API_KEY) {
+    query.append("key", ACLED_API_KEY);
+  }
+  if (ACLED_EMAIL) {
+    query.append("email", ACLED_EMAIL);
+  }
+
+  if (!ACLED_API_KEY || !ACLED_EMAIL) {
+    console.warn("[osint] ACLED_API_KEY and ACLED_EMAIL are required. Register at https://acleddata.com/");
+    return [];
+  }
 
   if (year) {
     query.append("year", year);
