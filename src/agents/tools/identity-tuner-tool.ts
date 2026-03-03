@@ -24,13 +24,19 @@ const MAX_LENGTH = 2000;
 const MAX_BACKUPS = 5;
 
 function ensureDirs(): void {
-  if (!fs.existsSync(MUTABLE_DIR)) {fs.mkdirSync(MUTABLE_DIR, { recursive: true });}
-  if (!fs.existsSync(BACKUP_DIR)) {fs.mkdirSync(BACKUP_DIR, { recursive: true });}
+  if (!fs.existsSync(MUTABLE_DIR)) {
+    fs.mkdirSync(MUTABLE_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(BACKUP_DIR)) {
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  }
 }
 
 function readMutable(): string {
   ensureDirs();
-  if (!fs.existsSync(MUTABLE_FILE)) {return "";}
+  if (!fs.existsSync(MUTABLE_FILE)) {
+    return "";
+  }
   return fs.readFileSync(MUTABLE_FILE, "utf-8");
 }
 
@@ -85,17 +91,9 @@ export function createIdentityTunerTool(): AnyAgentTool {
       "Only the mutable section can be edited — core identity is protected. " +
       "Max 2000 characters. Last 5 versions kept for rollback.",
     parameters: Type.Object({
-      operation: Type.Union(
-        [
-          Type.Literal("read"),
-          Type.Literal("append"),
-          Type.Literal("replace"),
-          Type.Literal("delete"),
-          Type.Literal("reset"),
-          Type.Literal("rollback"),
-        ],
-        { description: "The edit operation to perform." },
-      ),
+      operation: Type.String({
+        description: "The edit operation: read, append, replace, delete, reset, or rollback.",
+      }),
       text: Type.Optional(
         Type.String({
           description:
@@ -214,7 +212,10 @@ export function createIdentityTunerTool(): AnyAgentTool {
           if (!current.includes(text)) {
             return {
               content: [
-                { type: "text" as const, text: "Error: Text to delete not found in mutable section." },
+                {
+                  type: "text" as const,
+                  text: "Error: Text to delete not found in mutable section.",
+                },
               ],
               details: {},
             };
@@ -249,9 +250,7 @@ export function createIdentityTunerTool(): AnyAgentTool {
           const backups = getBackups();
           if (backups.length === 0) {
             return {
-              content: [
-                { type: "text" as const, text: "No backups available for rollback." },
-              ],
+              content: [{ type: "text" as const, text: "No backups available for rollback." }],
               details: {},
             };
           }

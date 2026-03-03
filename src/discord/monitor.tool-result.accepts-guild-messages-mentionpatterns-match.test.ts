@@ -403,7 +403,7 @@ describe("discord tool result dispatch", () => {
     await handler(createThreadEvent("m4", threadChannel), client);
 
     const capturedCtx = getCapturedCtx();
-    expect(capturedCtx?.SessionKey).toBe("agent:main:discord:channel:t1");
+    expect(capturedCtx?.SessionKey).toBe("agent:main:discord:channel:t1:u2");
     expect(capturedCtx?.ParentSessionKey).toBe("agent:main:discord:channel:p1");
     expect(capturedCtx?.ThreadStarterBody).toContain("starter message");
     expect(capturedCtx?.ThreadLabel).toContain("Discord thread #general");
@@ -480,7 +480,7 @@ describe("discord tool result dispatch", () => {
     await handler(createThreadEvent("m6"), client);
 
     const capturedCtx = getCapturedCtx();
-    expect(capturedCtx?.SessionKey).toBe("agent:main:discord:channel:t1");
+    expect(capturedCtx?.SessionKey).toBe("agent:main:discord:channel:t1:u2");
     expect(capturedCtx?.ParentSessionKey).toBe("agent:main:discord:channel:forum-1");
     expect(capturedCtx?.ThreadStarterBody).toContain("starter message");
     expect(capturedCtx?.ThreadLabel).toContain("Discord thread #support");
@@ -506,7 +506,7 @@ describe("discord tool result dispatch", () => {
     await handler(createThreadEvent("m5", threadChannel), client);
 
     const capturedCtx = getCapturedCtx();
-    expect(capturedCtx?.SessionKey).toBe("agent:support:discord:channel:t1");
+    expect(capturedCtx?.SessionKey).toBe("agent:support:discord:channel:t1:u2");
     expect(capturedCtx?.ParentSessionKey).toBe("agent:support:discord:channel:p1");
   });
 });

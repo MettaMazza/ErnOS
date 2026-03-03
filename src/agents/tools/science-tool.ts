@@ -30,22 +30,11 @@ export function createScienceTool(): AnyAgentTool {
       "'auto' (auto-detect best mode). " +
       "Use 'auto' when unsure which mode to use.",
     parameters: Type.Object({
-      mode: Type.Union(
-        [
-          Type.Literal("evaluate"),
-          Type.Literal("solve"),
-          Type.Literal("matrix"),
-          Type.Literal("stats"),
-          Type.Literal("physics"),
-          Type.Literal("chemistry"),
-          Type.Literal("code"),
-          Type.Literal("auto"),
-        ],
-        {
-          description: "Computation mode. Use 'auto' to auto-detect.",
-          default: "auto",
-        },
-      ),
+      mode: Type.String({
+        description:
+          "Computation mode: evaluate, solve, matrix, stats, physics, chemistry, code, or auto. Use 'auto' to auto-detect.",
+        default: "auto",
+      }),
       expression: Type.String({
         description:
           "The expression, query, or code to compute. " +
