@@ -721,3 +721,60 @@ export async function kokoroNativeTTS(params: {
     }
   });
 }
+
+/** Path to the Qwen TTS venv Python binary. */
+const QWEN_TTS_PYTHON =
+  process.env.QWEN_TTS_PYTHON?.trim() ||
+  path.join(process.env.HOME ?? "/Users/mettamazza", ".ernos", "qwen-tts-env", "bin", "python3.12");
+
+export async function qwenTTS(params: {
+  text: string;
+  outputPath: string;
+  config: ResolvedTtsConfig["qwen"];
+}): Promise<void> {
+  const { text, outputPath, config } = params;
+
+  const speaker = config?.speaker || "Aidan";
+  const language = config?.language || "Auto";
+  const instruct = config?.instruct || "";
+
+  return new Promise((resolve, reject) => {
+    try {
+      const root = resolveErnOSPackageRootSync({ moduleUrl: import.meta.url }) || process.cwd();
+      const scriptPath = path.resolve(root, "scripts/run-qwen-tts.py");
+
+      const args = [scriptPath, outputPath, speaker, language];
+      if (instruct) {
+        args.push(instruct);
+      }
+
+      const child = spawn(QWEN_TTS_PYTHON, args, {
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      let stderrData = "";
+
+      child.stderr.on("data", (data) => {
+        stderrData += data.toString();
+      });
+
+      child.on("close", (code) => {
+        if (code !== 0) {
+          reject(new Error(`Qwen TTS failed (code ${code}): ${stderrData}`));
+        } else {
+          resolve();
+        }
+      });
+
+      child.on("error", (err) => {
+        reject(new Error(`Qwen TTS process spawn failed: ${err.message}`));
+      });
+
+      // Write full text via stdin to avoid OS arg length limits
+      child.stdin.write(text);
+      child.stdin.end();
+    } catch (err: unknown) {
+      reject(new Error(`Qwen TTS setup failed: ${(err as Error).message}`));
+    }
+  });
+}

@@ -1,4 +1,4 @@
-export type TtsProvider = "elevenlabs" | "openai" | "edge" | "kokoro";
+export type TtsProvider = "elevenlabs" | "openai" | "edge" | "kokoro" | "qwen";
 
 export type TtsMode = "final" | "all";
 
@@ -64,6 +64,15 @@ export type TtsConfig = {
   kokoro?: {
     voice?: string;
     speed?: number;
+  };
+  /** Qwen3-TTS CustomVoice configuration. */
+  qwen?: {
+    /** Speaker name (Chelsie, Ethan, Ryan, Vivian, Luke, Laura, Aidan). */
+    speaker?: string;
+    /** Language (Auto, English, Chinese, Japanese, Korean, etc.). */
+    language?: string;
+    /** Natural language instruction for voice style/emotion. */
+    instruct?: string;
   };
   /** Microsoft Edge (node-edge-tts) configuration. */
   edge?: {

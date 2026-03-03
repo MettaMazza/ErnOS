@@ -40,6 +40,7 @@ import {
   scheduleCleanup,
   summarizeText,
   kokoroNativeTTS,
+  qwenTTS,
 } from "./tts-core.js";
 export { OPENAI_TTS_MODELS, OPENAI_TTS_VOICES } from "./tts-core.js";
 
@@ -120,6 +121,11 @@ export type ResolvedTtsConfig = {
   kokoro: {
     voice?: string;
     speed?: number;
+  };
+  qwen: {
+    speaker?: string;
+    language?: string;
+    instruct?: string;
   };
   edge: {
     enabled: boolean;
@@ -300,6 +306,11 @@ export function resolveTtsConfig(cfg: ErnOSConfig): ResolvedTtsConfig {
     kokoro: {
       voice: raw.kokoro?.voice,
       speed: raw.kokoro?.speed,
+    },
+    qwen: {
+      speaker: raw.qwen?.speaker,
+      language: raw.qwen?.language,
+      instruct: raw.qwen?.instruct,
     },
     edge: {
       enabled: raw.edge?.enabled ?? true,
@@ -517,17 +528,17 @@ export function resolveTtsApiKey(
     // Local OpenAI-compatible servers (e.g. Kokoro) don't need a real API key.
     // If a custom baseUrl is configured, treat it as authenticated.
     const key = config.openai.apiKey || process.env.OPENAI_API_KEY;
-    if (key) return key;
-    if (config.openai.baseUrl) return "local";
+    if (key) {return key;}
+    if (config.openai.baseUrl) {return "local";}
     return undefined;
   }
-  if (provider === "kokoro") {
+  if (provider === "kokoro" || provider === "qwen") {
     return "local";
   }
   return undefined;
 }
 
-export const TTS_PROVIDERS = ["openai", "elevenlabs", "edge", "kokoro"] as const;
+export const TTS_PROVIDERS = ["openai", "elevenlabs", "edge", "kokoro", "qwen"] as const;
 
 export function resolveTtsProviderOrder(primary: TtsProvider): TtsProvider[] {
   return [primary, ...TTS_PROVIDERS.filter((provider) => provider !== primary)];
@@ -537,8 +548,8 @@ export function isTtsProviderConfigured(config: ResolvedTtsConfig, provider: Tts
   if (provider === "edge") {
     return config.edge.enabled;
   }
-  if (provider === "kokoro") {
-    // Kokoro runs locally without an API key
+  if (provider === "kokoro" || provider === "qwen") {
+    // Kokoro and Qwen run locally without an API key
     return true;
   }
   return Boolean(resolveTtsApiKey(config, provider));
@@ -656,7 +667,7 @@ export async function textToSpeech(params: {
       }
 
       let apiKey: string | undefined;
-      if (provider !== "kokoro") {
+      if (provider !== "kokoro" && provider !== "qwen") {
         apiKey = resolveTtsApiKey(config, provider);
         if (!apiKey) {
           errors.push(`${provider}: no API key`);
@@ -698,6 +709,28 @@ export async function textToSpeech(params: {
           text: params.text,
           outputPath: audioPath,
           config: config.kokoro,
+        });
+
+        scheduleCleanup(tempDir);
+
+        return {
+          success: true,
+          audioPath,
+          latencyMs: Date.now() - providerStart,
+          provider,
+          outputFormat: "wav",
+          voiceCompatible: true,
+        };
+      } else if (provider === "qwen") {
+        const tempRoot = resolvePreferredErnOSTmpDir();
+        mkdirSync(tempRoot, { recursive: true, mode: 0o700 });
+        const tempDir = mkdtempSync(path.join(tempRoot, "tts-"));
+        const audioPath = path.join(tempDir, `voice-${Date.now()}.wav`);
+
+        await qwenTTS({
+          text: params.text,
+          outputPath: audioPath,
+          config: config.qwen,
         });
 
         scheduleCleanup(tempDir);
@@ -973,7 +1006,7 @@ export async function maybeApplyTtsToPayload(params: {
   // 7. Strip leftover markdown/formatting symbols that TTS reads aloud
   //    Covers: # * ~ ` | > < > [ ] { } ( ) \ ^ = +
   textForAudio = textForAudio.replace(/[#*~`|>\\{}^=+]/g, "");
-  textForAudio = textForAudio.replace(/[<>\[\]]/g, "");
+  textForAudio = textForAudio.replace(/[<>[\]]/g, "");
 
   // 7. Replace underscores with spaces (common in identifiers like user_id → "user id")
   textForAudio = textForAudio.replace(/_/g, " ");
