@@ -32,6 +32,9 @@ export async function getAcledEvents(
 
   const url = `${ACLED_URL}?${query.toString()}`;
 
+  // ACLED requires a valid User-Agent, and sometimes fails on IPv6/undici local setups.
+  // We use standard fetch with a larger timeout.
+
   try {
     const response = await fetch(url, {
       method: "GET",

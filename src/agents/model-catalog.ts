@@ -196,12 +196,18 @@ export async function loadModelCatalog(params?: {
       const agentDir = resolveErnOSAgentDir();
       const { join } = await import("node:path");
 
-      const authStorage = discoverAuthStorage(agentDir);
+      const authStorage = (discoverAuthStorage as (dir: string) => unknown)(agentDir);
 
       let entries: Array<DiscoveredModel>;
       if (typeof discoverModelsFn === "function") {
         const registry = discoverModelsFn(authStorage, agentDir);
-        entries = Array.isArray(registry) ? registry : registry.getAll();
+        entries =
+          registry &&
+          typeof (registry as { getAll?: () => Array<DiscoveredModel> }).getAll === "function"
+            ? (registry as { getAll: () => Array<DiscoveredModel> }).getAll()
+            : Array.isArray(registry)
+              ? registry
+              : [];
       } else {
         const registry = new (RegistryClass as {
           new (
@@ -209,7 +215,13 @@ export async function loadModelCatalog(params?: {
             modelsFile: string,
           ): Array<DiscoveredModel> | { getAll: () => Array<DiscoveredModel> };
         })(authStorage, join(agentDir, "models.json"));
-        entries = Array.isArray(registry) ? registry : registry.getAll();
+        entries =
+          registry &&
+          typeof (registry as { getAll?: () => Array<DiscoveredModel> }).getAll === "function"
+            ? (registry as { getAll: () => Array<DiscoveredModel> }).getAll()
+            : Array.isArray(registry)
+              ? registry
+              : [];
       }
 
       for (const entry of entries) {
