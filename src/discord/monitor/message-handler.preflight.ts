@@ -298,7 +298,10 @@ export async function preflightDiscordMessage(
     memberRoleIds,
     peer: {
       kind: isDirectMessage ? "direct" : isGroupDm ? "group" : "channel",
-      id: isDirectMessage ? author.id : messageChannelId,
+      // Guild channel sessions are per-user: each user gets their own session
+      // and conversation context. ErnOS has channel-read tools and the room
+      // roster HUD for shared awareness without needing a shared session.
+      id: isDirectMessage ? author.id : `${messageChannelId}:${sender.id}`,
     },
     // Pass parent peer for thread binding inheritance
     parentPeer: earlyThreadParentId ? { kind: "channel", id: earlyThreadParentId } : undefined,
