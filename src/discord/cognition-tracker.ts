@@ -63,7 +63,7 @@ export class CognitionTracker {
         body: payload,
       })) as { id: string };
       this.messageId = result?.id;
-    } catch (err) {
+    } catch {
       // Non-fatal — tracker is optional UX
       this.messageId = undefined;
     }
@@ -71,7 +71,9 @@ export class CognitionTracker {
 
   /** Append text to the embedded status (e.g. intermediate replies) */
   async updateText(text: string): Promise<void> {
-    if (!this.messageId || !text.trim()) return;
+    if (!this.messageId || !text.trim()) {
+      return;
+    }
     this.textBuffer.push(text.trim());
     this.pendingUpdate = true;
     await this.flush();
@@ -79,7 +81,9 @@ export class CognitionTracker {
 
   /** Update with a tool that's about to run. Auto-completes the previous tool. */
   async updateTool(toolName?: string, args?: unknown): Promise<void> {
-    if (!this.messageId) return;
+    if (!this.messageId) {
+      return;
+    }
     // Auto-complete the previous tool
     if (this.currentAction) {
       this.statusLines.push(this.currentAction);
@@ -93,7 +97,9 @@ export class CognitionTracker {
 
   /** Record that the model is reasoning/thinking. */
   async updateThinking(): Promise<void> {
-    if (!this.messageId) return;
+    if (!this.messageId) {
+      return;
+    }
     // Auto-complete any pending tool
     if (this.currentAction && this.currentAction !== "🧠 Reasoning...") {
       this.statusLines.push(this.currentAction);
@@ -106,7 +112,9 @@ export class CognitionTracker {
 
   /** Edit the embed into its final "complete" state. */
   async finalize(error?: boolean): Promise<void> {
-    if (!this.messageId) return;
+    if (!this.messageId) {
+      return;
+    }
     if (this.deferredTimer) {
       clearTimeout(this.deferredTimer);
       this.deferredTimer = undefined;
@@ -144,6 +152,15 @@ export class CognitionTracker {
         }
       }
 
+      // Persist intermediate text messages (e.g. mid-task replies)
+      if (this.textBuffer.length > 0) {
+        lines.push("");
+        lines.push("---");
+        for (const text of this.textBuffer) {
+          lines.push(`💬 *${text}*`);
+        }
+      }
+
       const content = this.truncateContent(lines.join("\n"));
       const color = error ? COLOR_ERROR : COLOR_COMPLETE;
       await this.editEmbed(content, color);
@@ -162,7 +179,9 @@ export class CognitionTracker {
   // --- Internal ---
 
   private async flush(): Promise<void> {
-    if (!this.messageId || !this.pendingUpdate) return;
+    if (!this.messageId || !this.pendingUpdate) {
+      return;
+    }
 
     const now = Date.now();
     if (now - this.lastEditTime < EDIT_DEBOUNCE_MS) {
@@ -182,7 +201,9 @@ export class CognitionTracker {
   }
 
   private async doEdit(): Promise<void> {
-    if (!this.messageId || !this.pendingUpdate) return;
+    if (!this.messageId || !this.pendingUpdate) {
+      return;
+    }
 
     this.pendingUpdate = false;
     this.lastEditTime = Date.now();
