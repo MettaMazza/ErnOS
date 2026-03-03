@@ -76,10 +76,12 @@ import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.t
 import { renderInstances } from "./views/instances.ts";
 import { renderLogs } from "./views/logs.ts";
 import { renderNodes } from "./views/nodes.ts";
+import { renderOsintMap } from "./views/osint-map.ts";
 import { renderOverview } from "./views/overview.ts";
 import { renderSessions } from "./views/sessions.ts";
 import { renderSkills } from "./views/skills.ts";
 import "./views/kg-viewer.ts"; // Side-effect: registers <kg-viewer> custom element
+import "./components/osint-react-bridge.tsx"; // Side-effect: registers <osint-react-bridge>
 
 const AVATAR_DATA_RE = /^data:/i;
 const AVATAR_HTTP_RE = /^https?:\/\//i;
@@ -510,6 +512,8 @@ export function renderApp(state: AppViewState) {
               })
             : nothing
         }
+
+        ${state.tab === "osint-map" ? renderOsintMap(state) : nothing}
 
         ${
           state.tab === "agents"

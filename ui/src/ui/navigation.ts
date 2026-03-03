@@ -7,11 +7,12 @@ export const TAB_GROUPS = [
     label: "control",
     tabs: ["overview", "channels", "instances", "sessions", "usage", "cron"],
   },
-  { label: "agent", tabs: ["agents", "skills", "nodes", "knowledge-graph"] },
+  { label: "agent", tabs: ["agents", "skills", "nodes", "knowledge-graph", "osint-map"] },
   { label: "settings", tabs: ["config", "debug", "logs"] },
 ] as const;
 
 export type Tab =
+  | "osint-map"
   | "agents"
   | "overview"
   | "channels"
@@ -42,6 +43,7 @@ const TAB_PATHS: Record<Tab, string> = {
   debug: "/debug",
   logs: "/logs",
   "knowledge-graph": "/knowledge-graph",
+  "osint-map": "/osint-map",
 };
 
 const PATH_TO_TAB = new Map(Object.entries(TAB_PATHS).map(([tab, path]) => [path, tab as Tab]));
@@ -154,6 +156,8 @@ export function iconForTab(tab: Tab): IconName {
     case "logs":
       return "scrollText";
     case "knowledge-graph":
+      return "globe";
+    case "osint-map":
       return "globe";
     default:
       return "folder";

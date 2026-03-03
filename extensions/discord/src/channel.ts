@@ -427,7 +427,7 @@ export const discordPlugin: ChannelPlugin<ResolvedDiscordAccount> = {
             `[${account.accountId}] Discord Message Content Intent is disabled; bot may not respond to channel messages. Enable it in Discord Dev Portal (Bot → Privileged Gateway Intents) or require mentions.`,
           );
         } else if (messageContent === "limited") {
-          ctx.log?.info(
+          ctx.log?.debug?.(
             `[${account.accountId}] Discord Message Content Intent is limited; bots under 100 servers can use it without verification.`,
           );
         }

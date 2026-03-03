@@ -199,9 +199,6 @@ export async function loadImageFromRef(
 ): Promise<ImageContent | null> {
   try {
     let targetPath = ref.resolved;
-    console.debug(
-      `[image-debug] loadImageFromRef: ref=${ref.resolved}, type=${ref.type}, workspaceOnly=${options?.workspaceOnly}, hasSandbox=${!!options?.sandbox}`,
-    );
 
     // Resolve paths relative to sandbox or workspace as needed
     if (options?.sandbox) {
@@ -244,9 +241,6 @@ export async function loadImageFromRef(
       : await loadWebMedia(targetPath, options?.maxBytes);
 
     if (media.kind !== "image") {
-      console.debug(
-        `[image-debug] loadImageFromRef: not an image file: ${targetPath} (got ${media.kind})`,
-      );
       log.debug(`Native image: not an image file: ${targetPath} (got ${media.kind})`);
       return null;
     }
@@ -255,16 +249,9 @@ export async function loadImageFromRef(
     // Default to JPEG since optimization converts images to JPEG format
     const mimeType = media.contentType ?? "image/jpeg";
     const data = media.buffer.toString("base64");
-
-    console.debug(
-      `[image-debug] loadImageFromRef: SUCCESS loaded ${targetPath} mimeType=${mimeType} base64Length=${data.length}`,
-    );
     return { type: "image", data, mimeType };
   } catch (err) {
     // Log the actual error for debugging (size limits, network failures, etc.)
-    console.debug(
-      `[image-debug] loadImageFromRef: FAILED to load ${ref.resolved}: ${err instanceof Error ? err.message : String(err)}`,
-    );
     log.debug(
       `Native image: failed to load ${ref.resolved}: ${err instanceof Error ? err.message : String(err)}`,
     );
@@ -354,9 +341,6 @@ export async function detectAndLoadPromptImages(params: {
 }> {
   // If model doesn't support images, return empty results
   if (!modelSupportsImages(params.model)) {
-    console.debug(
-      `[image-debug] detectAndLoadPromptImages: model does NOT support images, input=${JSON.stringify(params.model.input)}`,
-    );
     return {
       images: [],
       detectedRefs: [],
@@ -366,13 +350,7 @@ export async function detectAndLoadPromptImages(params: {
   }
 
   // Detect images from current prompt
-  console.debug(
-    `[image-debug] detectAndLoadPromptImages: scanning prompt (${params.prompt.length} chars), first 500: ${params.prompt.slice(0, 500)}`,
-  );
   const allRefs = detectImageReferences(params.prompt);
-  console.debug(
-    `[image-debug] detectAndLoadPromptImages: detected ${allRefs.length} refs: ${JSON.stringify(allRefs.map((r) => ({ raw: r.raw, resolved: r.resolved })))}`,
-  );
 
   if (allRefs.length === 0) {
     return {

@@ -5,6 +5,7 @@ import { resolveMergedSafeBinProfileFixtures } from "../infra/exec-safe-bin-runt
 import { logWarn } from "../logger.js";
 import { getPluginToolMeta } from "../plugins/tools.js";
 import { isSubagentSessionKey } from "../routing/session-key.js";
+import { osintSkills } from "../skills/osint/osint-orchestrator.js";
 import { resolveGatewayMessageChannel } from "../utils/message-channel.js";
 import { resolveAgentConfig } from "./agent-scope.js";
 import { createApplyPatchTool } from "./apply-patch.js";
@@ -458,6 +459,7 @@ export function createErnOSCodingTools(options?: {
       config: options?.config,
       sessionKey: options?.sessionKey,
     }) as unknown as AnyAgentTool,
+    ...(osintSkills as unknown as AnyAgentTool[]),
     // Channel docking: include channel-defined agent tools (login, etc.).
     ...listChannelAgentTools({ cfg: options?.config }),
     ...createErnOSTools({

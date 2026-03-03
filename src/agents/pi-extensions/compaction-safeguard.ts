@@ -231,6 +231,12 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
       return { cancel: true };
     }
 
+    if (model.provider && model.provider.toLowerCase() === "ollama") {
+      const { registerOllamaProvider } =
+        require("../ollama-stream.js") as typeof import("../ollama-stream.js");
+      registerOllamaProvider(model.baseUrl ?? "http://127.0.0.1:11434");
+    }
+
     const apiKey = await ctx.modelRegistry.getApiKey(model);
     if (!apiKey) {
       console.warn(

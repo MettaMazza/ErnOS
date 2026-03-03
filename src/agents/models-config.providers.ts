@@ -244,7 +244,7 @@ async function discoverOllamaModels(baseUrl?: string): Promise<ModelDefinitionCo
   try {
     const apiBase = resolveOllamaApiBase(baseUrl);
     const response = await fetch(`${apiBase}/api/tags`, {
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(15000),
     });
     if (!response.ok) {
       log.warn(`Failed to discover Ollama models: ${response.status}`);
@@ -291,7 +291,7 @@ async function discoverVllmModels(
     const trimmedApiKey = apiKey?.trim();
     const response = await fetch(url, {
       headers: trimmedApiKey ? { Authorization: `Bearer ${trimmedApiKey}` } : undefined,
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(15000),
     });
     if (!response.ok) {
       log.warn(`Failed to discover vLLM models: ${response.status}`);

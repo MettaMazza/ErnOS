@@ -1,3 +1,4 @@
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { peekSystemEvents, resetSystemEventsForTest } from "../infra/system-events.js";
@@ -25,8 +26,8 @@ const NOTIFY_POLL_OPTIONS = {
   timeout: NOTIFY_EVENT_TIMEOUT_MS,
   interval: POLL_INTERVAL_MS,
 };
-const SHELL_ENV_KEYS = ["SHELL"] as const;
-const PATH_SHELL_ENV_KEYS = ["PATH", "SHELL"] as const;
+const SHELL_ENV_KEYS = ["SHELL", "ZDOTDIR"] as const;
+const PATH_SHELL_ENV_KEYS = ["PATH", "SHELL", "ZDOTDIR"] as const;
 const PROCESS_STATUS_RUNNING = "running";
 const PROCESS_STATUS_COMPLETED = "completed";
 const PROCESS_STATUS_FAILED = "failed";
@@ -151,8 +152,13 @@ async function pollProcessSession(params: {
   };
 }
 function applyDefaultShellEnv() {
-  if (!isWin && defaultShell) {
-    process.env.SHELL = defaultShell;
+  if (!isWin) {
+    if (defaultShell) {
+      process.env.SHELL = defaultShell;
+    }
+    // Prevent zsh from trying to load ~/.zshenv and throwing errors
+    // when $HOME is mocked to a temporary directory during tests.
+    process.env.ZDOTDIR = tmpdir();
   }
 }
 
@@ -506,6 +512,8 @@ describe("exec exit codes", () => {
 });
 
 describe("exec notifyOnExit", () => {
+  useCapturedEnv([...SHELL_ENV_KEYS], applyDefaultShellEnv);
+
   it("enqueues a system event when a backgrounded exec exits", async () => {
     const tool = createNotifyOnExitExecTool();
 

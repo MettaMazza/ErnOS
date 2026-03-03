@@ -182,21 +182,36 @@ export async function loadModelCatalog(params?: {
       // If this fails once (e.g. during a pnpm install that temporarily swaps node_modules),
       // we must not poison the cache with a rejected promise (otherwise all channel handlers
       // will keep failing until restart).
-      const piSdk = await importPiSdk();
+      const piSdkModule = (await importPiSdk()) as {
+        discoverAuthStorage?: (path: string) => unknown;
+        discoverModels?: (authStorage: unknown, path: string) => unknown;
+        ModelRegistry?: unknown;
+        default?: Record<string, unknown>;
+      };
+      const discoverAuthStorage =
+        piSdkModule.discoverAuthStorage ?? piSdkModule.default?.discoverAuthStorage;
+      const discoverModelsFn = piSdkModule.discoverModels ?? piSdkModule.default?.discoverModels;
+      const RegistryClass = piSdkModule.ModelRegistry ?? piSdkModule.default?.ModelRegistry;
+
       const agentDir = resolveErnOSAgentDir();
       const { join } = await import("node:path");
-      const authStorage = piSdk.discoverAuthStorage(agentDir);
-      const registry = new (piSdk.ModelRegistry as unknown as {
-        new (
-          authStorage: unknown,
-          modelsFile: string,
-        ):
-          | Array<DiscoveredModel>
-          | {
-              getAll: () => Array<DiscoveredModel>;
-            };
-      })(authStorage, join(agentDir, "models.json"));
-      const entries = Array.isArray(registry) ? registry : registry.getAll();
+
+      const authStorage = discoverAuthStorage(agentDir);
+
+      let entries: Array<DiscoveredModel>;
+      if (typeof discoverModelsFn === "function") {
+        const registry = discoverModelsFn(authStorage, agentDir);
+        entries = Array.isArray(registry) ? registry : registry.getAll();
+      } else {
+        const registry = new (RegistryClass as {
+          new (
+            authStorage: unknown,
+            modelsFile: string,
+          ): Array<DiscoveredModel> | { getAll: () => Array<DiscoveredModel> };
+        })(authStorage, join(agentDir, "models.json"));
+        entries = Array.isArray(registry) ? registry : registry.getAll();
+      }
+
       for (const entry of entries) {
         const id = String(entry?.id ?? "").trim();
         if (!id) {

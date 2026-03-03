@@ -68,12 +68,17 @@ const normalizePathEntries = (value?: string) =>
 
 describe("exec PATH login shell merge", () => {
   let envSnapshot: ReturnType<typeof captureEnv>;
+  let tempHome: string;
 
   beforeEach(() => {
-    envSnapshot = captureEnv(["PATH", "SHELL"]);
+    envSnapshot = captureEnv(["PATH", "SHELL", "HOME", "ZDOTDIR"]);
+    tempHome = fs.mkdtempSync(path.join(os.tmpdir(), "ernos-test-home-"));
+    process.env.HOME = tempHome;
+    process.env.ZDOTDIR = tempHome;
   });
 
   afterEach(() => {
+    fs.rmSync(tempHome, { recursive: true, force: true });
     envSnapshot.restore();
   });
 

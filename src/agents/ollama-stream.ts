@@ -228,7 +228,7 @@ function extractOllamaImages(content: unknown): string[] {
     return [];
   }
   const images: string[] = [];
-  for (const part of content as any[]) {
+  for (const part of content) {
     if (part.type === "image" && typeof part.data === "string") {
       // Native ErnOS format: { type: "image", data: "base64..." }
       images.push(part.data);
@@ -238,7 +238,9 @@ function extractOllamaImages(content: unknown): string[] {
       if (typeof url === "string") {
         if (url.startsWith("data:")) {
           const base64 = url.split(",")[1];
-          if (base64) images.push(base64);
+          if (base64) {
+            images.push(base64);
+          }
         } else {
           // For remote URLs, pass the URL itself — Ollama can handle some URLs
           images.push(url);
@@ -449,28 +451,6 @@ export function createOllamaStreamFn(baseUrl: string): ApiStreamFunction {
           context.systemPrompt,
         );
 
-        // DEBUG: log image info in user messages
-        for (const m of ollamaMessages) {
-          if (m.role === "user" && m.images && m.images.length > 0) {
-            console.debug(`[ollama-debug] User message has ${m.images.length} images`);
-          }
-        }
-        const lastUser = context.messages?.filter((m) => m.role === "user").pop();
-        if (lastUser) {
-          const contentType =
-            typeof lastUser.content === "string"
-              ? "string"
-              : Array.isArray(lastUser.content)
-                ? `array(${lastUser.content.length})`
-                : typeof lastUser.content;
-          const imageCount = Array.isArray(lastUser.content)
-            ? (lastUser.content as any[]).filter((p: any) => p.type === "image").length
-            : 0;
-          console.debug(
-            `[ollama-debug] Last user msg content type: ${contentType}, imageCount: ${imageCount}`,
-          );
-        }
-
         const ollamaTools = extractOllamaTools(context.tools);
 
         // Ollama defaults to num_ctx=4096 which is too small for large
@@ -603,13 +583,15 @@ export function createOllamaStreamFn(baseUrl: string): ApiStreamFunction {
 let registeredOllamaBaseUrl: string | undefined;
 
 export function registerOllamaProvider(baseUrl: string) {
-  if (registeredOllamaBaseUrl === baseUrl) return;
+  if (registeredOllamaBaseUrl === baseUrl) {
+    return;
+  }
 
   const streamFn = createOllamaStreamFn(baseUrl);
 
   registerApiProvider(
     {
-      api: "ollama" as any,
+      api: "ollama" as never,
       stream: streamFn,
       streamSimple: streamFn,
     },

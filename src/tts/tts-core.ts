@@ -674,6 +674,7 @@ export async function edgeTTS(params: {
 }
 
 import { spawn } from "node:child_process";
+import { resolveErnOSPackageRootSync } from "../infra/ernos-root.js";
 
 export async function kokoroNativeTTS(params: {
   text: string;
@@ -687,7 +688,8 @@ export async function kokoroNativeTTS(params: {
 
   return new Promise((resolve, reject) => {
     try {
-      const scriptPath = path.resolve(process.cwd(), "scripts/run-kokoro.py");
+      const root = resolveErnOSPackageRootSync({ moduleUrl: import.meta.url }) || process.cwd();
+      const scriptPath = path.resolve(root, "scripts/run-kokoro.py");
 
       const child = spawn("python3.11", [scriptPath, outputPath, voice], {
         stdio: ["pipe", "pipe", "pipe"],
@@ -714,8 +716,8 @@ export async function kokoroNativeTTS(params: {
       // Write the full text to standard input to avoid OS argument length limits
       child.stdin.write(text);
       child.stdin.end();
-    } catch (err: any) {
-      reject(new Error(`Kokoro TTS setup failed: ${err.message}`));
+    } catch (err: unknown) {
+      reject(new Error(`Kokoro TTS setup failed: ${(err as Error).message}`));
     }
   });
 }
