@@ -351,9 +351,25 @@ export const osintSkills = [
 </div>
 `;
 
+      // Extract media URLs from datasets so Discord can attach them inline.
+      const mediaLines: string[] = [];
+      for (const ds of datasets) {
+        if (ds.info?.id === "webcams" && ds.data?.rows) {
+          // Webcam rows: [title, lon, lat, status, category, image_url, webcam_url]
+          for (const row of ds.data.rows.slice(0, 6)) {
+            const imageUrl = row[5];
+            if (typeof imageUrl === "string" && imageUrl.startsWith("http")) {
+              mediaLines.push(`MEDIA:${imageUrl}`);
+            }
+          }
+        }
+      }
+
+      const mediaBlock = mediaLines.length > 0 ? "\n" + mediaLines.join("\n") : "";
+
       return {
         success: true,
-        content: [{ type: "text", text: markdownHtml }],
+        content: [{ type: "text", text: markdownHtml + mediaBlock }],
       };
     },
   },

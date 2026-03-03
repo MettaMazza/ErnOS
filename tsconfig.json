@@ -6,7 +6,12 @@
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["DOM", "DOM.Iterable", "ES2023", "ScriptHost"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2023",
+      "ScriptHost"
+    ],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "noEmit": true,
@@ -14,15 +19,29 @@
     "outDir": "dist",
     "resolveJsonModule": true,
     "skipLibCheck": true,
+    "jsx": "react-jsx",
     "strict": true,
     "target": "es2023",
     "useDefineForClassFields": false,
     "paths": {
-      "ernos/plugin-sdk": ["./src/plugin-sdk/index.ts"],
-      "ernos/plugin-sdk/*": ["./src/plugin-sdk/*.ts"],
-      "ernos/plugin-sdk/account-id": ["./src/plugin-sdk/account-id.ts"]
+      "ernos/plugin-sdk": [
+        "./src/plugin-sdk/index.ts"
+      ],
+      "ernos/plugin-sdk/*": [
+        "./src/plugin-sdk/*.ts"
+      ],
+      "ernos/plugin-sdk/account-id": [
+        "./src/plugin-sdk/account-id.ts"
+      ]
     }
   },
-  "include": ["src/**/*", "ui/**/*", "extensions/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src/**/*",
+    "ui/**/*",
+    "extensions/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

@@ -528,7 +528,7 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
       }
 
       if (!finalizedViaPreviewMessage) {
-        await draftStream.clear();
+        await draftStream.stop();
       }
     }
 
@@ -761,10 +761,10 @@ export async function processDiscordMessage(ctx: DiscordMessagePreflightContext)
     throw err;
   } finally {
     try {
-      // Must stop() first to flush debounced content before clear() wipes state.
+      // Stop the draft stream without deleting the preview message.
       await draftStream?.stop();
       if (!finalizedViaPreviewMessage) {
-        await draftStream?.clear();
+        await draftStream?.stop();
       }
     } catch (err) {
       // Draft cleanup should never keep typing alive.

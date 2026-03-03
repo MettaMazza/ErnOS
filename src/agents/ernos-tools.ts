@@ -202,7 +202,7 @@ export function createErnOSTools(options?: {
       label: "Image Gen",
       name: "image_gen",
       description:
-        "Generate an image from a text prompt. Uses LOCAL_IMAGE_API_URL (Automatic1111/Forge) if configured, otherwise OpenAI DALL-E.",
+        "Generate an image from a text prompt using the local Flux model (diffusers on MPS). Runs locally — no cloud API needed.",
       parameters: {
         type: "object" as const,
         properties: {
@@ -227,7 +227,7 @@ export function createErnOSTools(options?: {
           return { content: [{ type: "text", text: `Image generation failed: ${result.error}` }] };
         }
         return {
-          content: [{ type: "text", text: `Image generated successfully.\nPath: ${result.path}\nProvider: ${result.provider}` }],
+          content: [{ type: "text", text: `Image generated successfully.\nMEDIA:${result.path}` }],
           details: { path: result.path, provider: result.provider },
         };
       },

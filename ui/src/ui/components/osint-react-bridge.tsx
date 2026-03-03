@@ -30,7 +30,7 @@ interface OsintMapAppProps {
   width: number;
   height: number;
   mapboxApiAccessToken: string;
-  mapData: unknown[]; // Kepler datasets
+  mapData: unknown[];
 }
 
 const OsintMapApp = ({ width, height, mapboxApiAccessToken, mapData }: OsintMapAppProps) => {
@@ -39,7 +39,7 @@ const OsintMapApp = ({ width, height, mapboxApiAccessToken, mapData }: OsintMapA
     if (mapData && Array.isArray(mapData) && mapData.length > 0) {
       store.dispatch(
         addDataToMap({
-          datasets: mapData,
+          datasets: mapData as Parameters<typeof addDataToMap>[0]["datasets"],
           options: {
             centerMap: true,
             readOnly: false,
@@ -50,8 +50,7 @@ const OsintMapApp = ({ width, height, mapboxApiAccessToken, mapData }: OsintMapA
     }
   }, [mapData]);
 
-  // @ts-ignore
-  const KeplerComponent = KeplerGl as unknown;
+  const KeplerComponent = KeplerGl as unknown as React.ComponentType<Record<string, unknown>>;
 
   return (
     <Provider store={store}>
