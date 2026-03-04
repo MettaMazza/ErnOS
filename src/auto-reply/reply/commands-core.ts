@@ -11,6 +11,7 @@ import { handleBashCommand } from "./commands-bash.js";
 import { handleClearCommand } from "./commands-clear.js";
 import { handleCompactCommand } from "./commands-compact.js";
 import { handleConfigCommand, handleDebugCommand } from "./commands-config.js";
+import { handleEndCommand } from "./commands-end.js";
 import {
   handleCommandsListCommand,
   handleContextCommand,
@@ -33,12 +34,12 @@ import {
 } from "./commands-session.js";
 import { handleSubagentsCommand } from "./commands-subagents.js";
 import { handleTtsCommands } from "./commands-tts.js";
-import { handleVoiceCommand } from "./commands-voice.js";
 import type {
   CommandHandler,
   CommandHandlerResult,
   HandleCommandsParams,
 } from "./commands-types.js";
+import { handleVoiceCommand } from "./commands-voice.js";
 import { routeReply } from "./route-reply.js";
 
 let HANDLERS: CommandHandler[] | null = null;
@@ -162,6 +163,7 @@ export async function handleCommands(params: HandleCommandsParams): Promise<Comm
       handleStopCommand,
       handleCompactCommand,
       handleClearCommand,
+      handleEndCommand,
       handlePurgeCommand,
       handleAbortTrigger,
     ];

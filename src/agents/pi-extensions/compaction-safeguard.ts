@@ -17,6 +17,7 @@ import {
   summarizeInStages,
 } from "../compaction.js";
 import { collectTextContentBlocks } from "../content-blocks.js";
+import { registerOllamaProvider } from "../ollama-stream.js";
 import { getCompactionSafeguardRuntime } from "./compaction-safeguard-runtime.js";
 
 const log = createSubsystemLogger("compaction-safeguard");
@@ -232,8 +233,6 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
     }
 
     if (model.provider && model.provider.toLowerCase() === "ollama") {
-      const { registerOllamaProvider } =
-        require("../ollama-stream.js") as typeof import("../ollama-stream.js");
       registerOllamaProvider(model.baseUrl ?? "http://127.0.0.1:11434");
     }
 

@@ -8,6 +8,7 @@ import { buildModelAliasLines } from "../model-alias-lines.js";
 import { normalizeModelCompat } from "../model-compat.js";
 import { resolveForwardCompatModel } from "../model-forward-compat.js";
 import { normalizeProviderId } from "../model-selection.js";
+import { registerOllamaProvider } from "../ollama-stream.js";
 import { discoverAuthStorage, discoverModels } from "../pi-model-discovery.js";
 
 type InlineModelEntry = ModelDefinitionConfig & {
@@ -109,8 +110,6 @@ export function resolveModel(
         maxTokens: providerCfg?.models?.[0]?.maxTokens ?? DEFAULT_CONTEXT_TOKENS,
       } as Model<Api>);
       if (normalizedProvider === "ollama") {
-        const { registerOllamaProvider } =
-          require("../ollama-stream.js") as typeof import("../ollama-stream.js");
         registerOllamaProvider(providerCfg?.baseUrl ?? "http://127.0.0.1:11434");
       }
       return { model: fallbackModel, authStorage, modelRegistry };
@@ -123,8 +122,6 @@ export function resolveModel(
   }
   const normalizedModel = normalizeModelCompat(model);
   if (normalizeProviderId(normalizedModel.provider) === "ollama") {
-    const { registerOllamaProvider } =
-      require("../ollama-stream.js") as typeof import("../ollama-stream.js");
     registerOllamaProvider(normalizedModel.baseUrl ?? "http://127.0.0.1:11434");
   }
   return { model: normalizedModel, authStorage, modelRegistry };
