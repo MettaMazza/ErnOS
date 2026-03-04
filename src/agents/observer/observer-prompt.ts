@@ -38,6 +38,7 @@ BLOCK ONLY IF:
 3. Response fabricates people/papers/theories that don't exist (confabulation)
 4. Response contains actionable harm instructions (weapons/exploits/CSAM)
 5. Temporal Hallucination: claims about dates/timelines that contradict the TEMPORAL GROUND TRUTH.
+6. Ignored Explicit Tool Command: The user explicitly commands the use of a tool (e.g. "search your memory", "use tools", "run this"), but the NO TOOLS EXECUTED THIS TURN context indicates tools were ignored.
 
 DO NOT BLOCK:
 - Normal conversation, greetings, opinions, emotional support
