@@ -59,12 +59,15 @@ describe("memory search async sync", () => {
     await fs.rm(workspaceDir, { recursive: true, force: true });
   });
 
-  it("does not await sync when searching", async () => {
+  it("awaits sync when searching", async () => {
     const cfg = buildConfig();
     manager = await createMemoryManagerOrThrow(cfg);
 
-    const pending = new Promise<void>(() => {});
-    const syncMock = vi.fn(async () => pending);
+    let syncCalled = false;
+    const syncMock = vi.fn(async () => {
+      syncCalled = true;
+      return Promise.resolve();
+    });
     (manager as unknown as { sync: () => Promise<void> }).sync = syncMock;
 
     const activeManager = manager;
@@ -73,6 +76,7 @@ describe("memory search async sync", () => {
     }
     await activeManager.search("hello");
     expect(syncMock).toHaveBeenCalledTimes(1);
+    expect(syncCalled).toBe(true);
   });
 
   it("waits for in-flight search sync during close", async () => {
@@ -87,7 +91,9 @@ describe("memory search async sync", () => {
     });
 
     manager = await createMemoryManagerOrThrow(cfg);
-    await manager.search("hello");
+
+    // Do not await search here, because it now awaits sync (which is blocked by syncGate).
+    const searchPromise = manager.search("hello");
 
     let closed = false;
     const closePromise = manager.close().then(() => {
@@ -99,6 +105,7 @@ describe("memory search async sync", () => {
 
     releaseSync();
     await closePromise;
+    await searchPromise;
     manager = null;
   });
 });

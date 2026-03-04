@@ -426,7 +426,7 @@ export abstract class MemoryManagerSyncOps {
     }, SESSION_DIRTY_DEBOUNCE_MS);
   }
 
-  private async processSessionDeltaBatch(): Promise<void> {
+  protected async processSessionDeltaBatch(): Promise<void> {
     if (this.sessionPendingFiles.size === 0) {
       return;
     }

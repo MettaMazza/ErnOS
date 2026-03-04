@@ -220,10 +220,17 @@ export class MemoryIndexManager extends MemoryManagerEmbeddingOps implements Mem
     },
   ): Promise<MemorySearchResult[]> {
     void this.warmSession(opts?.sessionKey);
-    if (this.settings.sync.onSearch && (this.dirty || this.sessionsDirty)) {
-      void this.sync({ reason: "search" }).catch((err) => {
-        log.warn(`memory sync failed (search): ${String(err)}`);
-      });
+    if (this.settings.sync.onSearch) {
+      if (this.sessionPendingFiles.size > 0) {
+        await this.processSessionDeltaBatch().catch(() => {});
+      }
+      if (this.dirty || this.sessionsDirty) {
+        try {
+          await this.sync({ reason: "search" });
+        } catch (err) {
+          log.warn(`memory sync failed (search): ${String(err)}`);
+        }
+      }
     }
     const cleaned = query.trim();
     if (!cleaned) {
