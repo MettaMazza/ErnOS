@@ -9,6 +9,7 @@ import type {
 } from "@mariozechner/pi-ai";
 import { createAssistantMessageEventStream, registerApiProvider } from "@mariozechner/pi-ai";
 import type { ApiStreamFunction } from "@mariozechner/pi-ai/dist/api-registry.js";
+import { fetch as undiciFetch, Agent } from "undici";
 import { createSubsystemLogger } from "../logging/subsystem.js";
 
 const log = createSubsystemLogger("ollama-stream");
@@ -454,8 +455,11 @@ export function createOllamaStreamFn(baseUrl: string): ApiStreamFunction {
         const ollamaTools = extractOllamaTools(context.tools);
 
         // Ollama defaults to num_ctx=4096 which is too small for large
-        // system prompts + many tool definitions. Use model's contextWindow.
-        const ollamaOptions: Record<string, unknown> = { num_ctx: model.contextWindow ?? 65536 };
+        // system prompts + many tool definitions.  Use the model's native
+        // contextWindow so we get the full capacity the hardware can handle.
+        const ollamaOptions: Record<string, unknown> = {
+          num_ctx: model.contextWindow ?? 32_768,
+        };
         if (typeof options?.temperature === "number") {
           ollamaOptions.temperature = options.temperature;
         }
@@ -482,11 +486,22 @@ export function createOllamaStreamFn(baseUrl: string): ApiStreamFunction {
           headers.Authorization = `Bearer ${options.apiKey}`;
         }
 
-        const response = await fetch(chatUrl, {
+        const agent = new Agent({
+          headersTimeout: 15 * 60 * 1000,
+          connectTimeout: 60 * 1000,
+          keepAliveTimeout: 15 * 60 * 1000,
+        });
+        const jsonBody = JSON.stringify(body);
+        log.info(
+          `[ollama-stream] fetch → ${chatUrl} | body=${jsonBody.length} bytes | num_ctx=${String(ollamaOptions.num_ctx)} | model=${model.id} | contextWindow=${String(model.contextWindow)}`,
+        );
+
+        const response = await undiciFetch(chatUrl, {
           method: "POST",
           headers,
-          body: JSON.stringify(body),
+          body: jsonBody,
           signal: options?.signal,
+          dispatcher: agent,
         });
 
         if (!response.ok) {

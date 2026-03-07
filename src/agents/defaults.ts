@@ -2,5 +2,6 @@
 // Model id defaults to local Ollama with Qwen 3.5.
 export const DEFAULT_PROVIDER = "ollama";
 export const DEFAULT_MODEL = "qwen3.5:35b";
-// Conservative fallback used when model metadata is unavailable.
-export const DEFAULT_CONTEXT_TOKENS = 32_768;
+// Match qwen3.5:35b's native 128k context window.
+// The previous 200k value inflated Ollama's KV cache to 262k tokens, stalling inference.
+export const DEFAULT_CONTEXT_TOKENS = 128_000;
