@@ -211,7 +211,8 @@ export function createErnOSTools(options?: {
         "as a media attachment. Do NOT include file paths, markdown image links, or filenames " +
         "in your reply — just describe what was generated conversationally. " +
         "IMPORTANT: You generated this image yourself. If the user later shows you an image " +
-        "that matches a prompt you used, recognise and acknowledge it as YOUR creation.",
+        "that matches a prompt you used, recognise and acknowledge it as YOUR creation. " +
+        "Note: Image models cannot render legible text. For diagrams with text labels, suggest code/markdown instead.",
       parameters: {
         type: "object" as const,
         properties: {

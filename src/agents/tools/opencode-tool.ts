@@ -154,6 +154,14 @@ export function createOpencodeAgentTool(options: { sessionKey?: string }): AnyAg
         const errObj = error as Error;
         const errStr = errObj.message || String(error);
         console.error(`[OpenCode Tool Error]:`, errStr);
+        if (errStr.includes("ENOENT") || errStr.includes("command not found")) {
+          return {
+            success: false,
+            content: [{ type: "text", text: "OpenCode CLI is not installed or available on the PATH. Cannot execute. Please install OpenCode." }],
+            details: {},
+            error: "ENOENT",
+          };
+        }
         return {
           success: false,
           content: [{ type: "text", text: errStr }],

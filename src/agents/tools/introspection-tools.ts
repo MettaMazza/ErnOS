@@ -18,7 +18,7 @@ import { artifactRegistry } from "../../memory/artifact-registry.js";
 /**
  * The Ernos project root (live codebase) — read tools use this.
  * Walks up from the compiled file's directory to find the project root (where package.json lives).
- * process.cwd() can't be used because at runtime it's set to ~/.ernos/workspace, not the project dir.
+ * We resolve this dynamically because process.cwd() may point to the execution directory, not the host root.
  */
 function getProjectRoot(): string {
   // Walk up from this file's location to find the project root
@@ -28,7 +28,7 @@ function getProjectRoot(): string {
       return dir;
     }
     const parent = path.dirname(dir);
-    if (parent === dir) break; // hit filesystem root
+    if (parent === dir) {break;} // hit filesystem root
     dir = parent;
   }
   // Fallback: use CWD
@@ -178,7 +178,7 @@ async function extractDocumentLines(
       try {
         const raw = fs.readFileSync(resolved, "utf-8");
         const rows = raw.split("\n").filter((r) => r.trim());
-        if (rows.length === 0) return { lines: ["[Empty CSV file]"] };
+        if (rows.length === 0) {return { lines: ["[Empty CSV file]"] };}
         const allLines: string[] = ["[CSV Document]", ""];
         // Simple CSV → markdown table (handles basic CSV without quoted commas)
         const headerCols = rows[0].split(",");
@@ -204,7 +204,7 @@ async function extractDocumentLines(
           .filter(
             (e: any) => e.entryName.startsWith("ppt/slides/slide") && e.entryName.endsWith(".xml"),
           )
-          .sort((a: any, b: any) => a.entryName.localeCompare(b.entryName));
+          .toSorted((a: any, b: any) => a.entryName.localeCompare(b.entryName));
 
         const allLines: string[] = [`[PowerPoint Document: ${slideEntries.length} slide(s)]`, ""];
         for (let i = 0; i < slideEntries.length; i++) {
@@ -273,7 +273,7 @@ async function extractDocumentLines(
         const AdmZip = (await import("adm-zip" as any)).default;
         const zip = new AdmZip(resolved);
         const contentEntry = zip.getEntry("content.xml");
-        if (!contentEntry) return { lines: [], error: "Could not find content.xml in ODT file." };
+        if (!contentEntry) {return { lines: [], error: "Could not find content.xml in ODT file." };}
         const xml = contentEntry.getData().toString("utf-8");
         // Extract text from <text:p> and <text:span> tags
         const textContent = xml
@@ -299,26 +299,26 @@ async function extractDocumentLines(
 
 async function readFilePage(filePath: string, startLine = 1, limit = 200): Promise<string> {
   const { safe, resolved, error } = resolveSafePath(filePath);
-  if (!safe) return `🔒 Access Denied: ${error}`;
+  if (!safe) {return `🔒 Access Denied: ${error}`;}
 
-  if (!fs.existsSync(resolved)) return `Error: File not found: ${filePath}`;
+  if (!fs.existsSync(resolved)) {return `Error: File not found: ${filePath}`;}
 
   try {
     const stat = fs.statSync(resolved);
     if (stat.isDirectory())
-      return `Error: '${filePath}' is a directory, not a file. Use list_files instead.`;
+      {return `Error: '${filePath}' is a directory, not a file. Use list_files instead.`;}
 
     const ext = path.extname(resolved).toLowerCase();
 
     // True binary: cannot display
     if (TRUE_BINARY_EXTS.has(ext))
-      return `Binary file: ${filePath} (${stat.size} bytes). Cannot display.`;
+      {return `Binary file: ${filePath} (${stat.size} bytes). Cannot display.`;}
 
     // Rich document format: use specialized parser
     if (RICH_DOC_EXTS.has(ext)) {
       const result = await extractDocumentLines(resolved, ext);
-      if (!result) return `Unsupported format: ${ext}`;
-      if (result.error) return result.error;
+      if (!result) {return `Unsupported format: ${ext}`;}
+      if (result.error) {return result.error;}
       const lines = result.lines;
       const totalLines = lines.length;
       const startIdx = Math.max(0, startLine - 1);
@@ -365,13 +365,13 @@ async function readFilePage(filePath: string, startLine = 1, limit = 200): Promi
 function listFiles(dirPath: unknown, recursive = false, maxDepth = 3): string {
   const normalizedPath = typeof dirPath === "string" && dirPath.trim() ? dirPath.trim() : ".";
   const { safe, resolved, error } = resolveSafePath(normalizedPath);
-  if (!safe) return `🔒 Access Denied: ${error}`;
+  if (!safe) {return `🔒 Access Denied: ${error}`;}
 
-  if (!fs.existsSync(resolved)) return `Error: Path not found: ${normalizedPath}`;
+  if (!fs.existsSync(resolved)) {return `Error: Path not found: ${normalizedPath}`;}
 
   try {
     const stat = fs.statSync(resolved);
-    if (!stat.isDirectory()) return `${dirPath} (file, ${stat.size} bytes)`;
+    if (!stat.isDirectory()) {return `${dirPath} (file, ${stat.size} bytes)`;}
 
     const entries: string[] = [];
     const skipDirs = new Set([
@@ -385,7 +385,7 @@ function listFiles(dirPath: unknown, recursive = false, maxDepth = 3): string {
     ]);
 
     function walk(dir: string, depth: number, prefix: string) {
-      if (depth > maxDepth) return;
+      if (depth > maxDepth) {return;}
 
       let items: fs.Dirent[];
       try {
@@ -396,13 +396,13 @@ function listFiles(dirPath: unknown, recursive = false, maxDepth = 3): string {
 
       // Sort: directories first, then files
       items.sort((a, b) => {
-        if (a.isDirectory() && !b.isDirectory()) return -1;
-        if (!a.isDirectory() && b.isDirectory()) return 1;
+        if (a.isDirectory() && !b.isDirectory()) {return -1;}
+        if (!a.isDirectory() && b.isDirectory()) {return 1;}
         return a.name.localeCompare(b.name);
       });
 
       for (const item of items) {
-        if (item.name.startsWith(".") && depth > 0) continue; // Skip hidden except at root
+        if (item.name.startsWith(".") && depth > 0) {continue;} // Skip hidden except at root
 
         if (item.isDirectory()) {
           if (skipDirs.has(item.name)) {
@@ -433,10 +433,10 @@ function listFiles(dirPath: unknown, recursive = false, maxDepth = 3): string {
 
     walk(resolved, 0, "");
 
-    if (entries.length === 0) return `Directory '${dirPath}' is empty.`;
-    return `Contents of ${dirPath}:\n${entries.join("\n")}`;
+    if (entries.length === 0) {return `Directory '${String(dirPath)}' is empty.`;}
+    return `Contents of ${String(dirPath)}:\n${entries.join("\n")}`;
   } catch (err) {
-    return `Error listing directory: ${err}`;
+    return `Error listing directory: ${String(err)}`;
   }
 }
 
@@ -450,9 +450,9 @@ function searchCodebase(
   const normalizedPath =
     typeof searchPath === "string" && searchPath.trim() ? searchPath.trim() : ".";
   const { safe, resolved, error } = resolveSafePath(normalizedPath);
-  if (!safe) return `🔒 Access Denied: ${error}`;
+  if (!safe) {return `🔒 Access Denied: ${error}`;}
 
-  if (!fs.existsSync(resolved)) return `Error: Path not found: ${normalizedPath}`;
+  if (!fs.existsSync(resolved)) {return `Error: Path not found: ${normalizedPath}`;}
 
   const extSet = new Set(
     extensions.split(",").map((e) => (e.trim().startsWith(".") ? e.trim() : `.${e.trim()}`)),
@@ -462,7 +462,7 @@ function searchCodebase(
   const skipDirs = new Set(["node_modules", ".git", "dist", "__pycache__", ".pnpm"]);
 
   function searchDir(dir: string) {
-    if (results.length >= maxResults) return;
+    if (results.length >= maxResults) {return;}
 
     let items: fs.Dirent[];
     try {
@@ -472,16 +472,16 @@ function searchCodebase(
     }
 
     for (const item of items) {
-      if (results.length >= maxResults) return;
+      if (results.length >= maxResults) {return;}
 
       const fullPath = path.join(dir, item.name);
 
       if (item.isDirectory()) {
-        if (skipDirs.has(item.name) || item.name.startsWith(".")) continue;
+        if (skipDirs.has(item.name) || item.name.startsWith(".")) {continue;}
         searchDir(fullPath);
       } else {
         const ext = path.extname(item.name).toLowerCase();
-        if (!extSet.has(ext)) continue;
+        if (!extSet.has(ext)) {continue;}
 
         try {
           const content = fs.readFileSync(fullPath, "utf-8");
@@ -490,7 +490,7 @@ function searchCodebase(
             if (lines[i].includes(query)) {
               const relPath = path.relative(getProjectRoot(), fullPath);
               results.push(`${relPath}:${i + 1}: ${lines[i].trim()}`);
-              if (results.length >= maxResults) return;
+              if (results.length >= maxResults) {return;}
             }
           }
         } catch {
@@ -502,9 +502,9 @@ function searchCodebase(
 
   searchDir(resolved);
 
-  if (results.length === 0) return `No matches found for "${query}" in ${searchPath}.`;
+  if (results.length === 0) {return `No matches found for "${query}" in ${String(searchPath)}.`;}
   let output = results.join("\n");
-  if (results.length >= maxResults) output += "\n... (truncated — narrow your search)";
+  if (results.length >= maxResults) {output += "\n... (truncated — narrow your search)";}
   return output;
 }
 
@@ -512,7 +512,7 @@ function searchCodebase(
 
 /**
  * Edit code in the SANDBOX workspace (never touches running code).
- * All writes go to ~/.ernos/sandbox/ so ErnOS can freely experiment.
+ * All writes go to the persistent sandbox volume so ErnOS can freely experiment.
  */
 function editCode(
   filePath: string,
@@ -527,7 +527,7 @@ function editCode(
   }
 
   const { safe, resolved, error } = resolveSafePath(filePath, sandboxRoot);
-  if (!safe) return `🔒 Access Denied: ${error}`;
+  if (!safe) {return `🔒 Access Denied: ${error}`;}
 
   try {
     const dir = path.dirname(resolved);
@@ -548,11 +548,11 @@ function editCode(
         break;
 
       case "insert": {
-        if (!fs.existsSync(resolved)) return `Error: File not found in sandbox: ${filePath}`;
+        if (!fs.existsSync(resolved)) {return `Error: File not found in sandbox: ${filePath}`;}
         const lines = fs.readFileSync(resolved, "utf-8").split("\n");
         const lineIdx = (insertLine ?? 1) - 1;
         if (lineIdx < 0 || lineIdx > lines.length)
-          return `Error: Line ${insertLine} out of range (1-${lines.length})`;
+          {return `Error: Line ${insertLine} out of range (1-${lines.length})`;}
         lines.splice(lineIdx, 0, content);
         fs.writeFileSync(resolved, lines.join("\n"), "utf-8");
         resultMessage = `✅ [SANDBOX] Inserted at line ${insertLine} in ${filePath}`;
@@ -560,10 +560,10 @@ function editCode(
       }
 
       case "replace": {
-        if (!target) return "Error: replace mode requires target parameter.";
-        if (!fs.existsSync(resolved)) return `Error: File not found in sandbox: ${filePath}`;
+        if (!target) {return "Error: replace mode requires target parameter.";}
+        if (!fs.existsSync(resolved)) {return `Error: File not found in sandbox: ${filePath}`;}
         const original = fs.readFileSync(resolved, "utf-8");
-        if (!original.includes(target)) return `Error: Target string not found in ${filePath}`;
+        if (!original.includes(target)) {return `Error: Target string not found in ${filePath}`;}
         const updated = original.replace(target, content);
         fs.writeFileSync(resolved, updated, "utf-8");
         resultMessage = `✅ [SANDBOX] Replaced target in ${filePath}`;
@@ -571,19 +571,19 @@ function editCode(
       }
 
       default:
-        return `Error: Unknown mode '${mode}'. Use: overwrite, append, insert, replace.`;
+        return `Error: Unknown mode '${String(mode)}'. Use: overwrite, append, insert, replace.`;
     }
 
     try {
       const finalBuffer = fs.readFileSync(resolved);
       artifactRegistry.registerArtifact(finalBuffer, { type: "code", path: filePath, context: mode });
     } catch (err) {
-      console.warn(`[ArtifactRegistry] Code tracking failed: ${err}`);
+      console.warn(`[ArtifactRegistry] Code tracking failed: ${String(err)}`);
     }
 
     return resultMessage;
   } catch (err) {
-    return `Error editing sandbox file: ${err}`;
+    return `Error editing sandbox file: ${String(err)}`;
   }
 }
 
@@ -592,10 +592,10 @@ function editCode(
 /** Read a file from the sandbox workspace to verify edits. */
 async function sandboxReadFile(filePath: string, startLine = 1, limit = 200): Promise<string> {
   const sandboxRoot = getSandboxRoot();
-  if (!fs.existsSync(sandboxRoot)) return "Error: Sandbox not found. Run start-ernos.sh first.";
+  if (!fs.existsSync(sandboxRoot)) {return "Error: Sandbox not found. Run start-ernos.sh first.";}
   const { safe, resolved, error } = resolveSafePath(filePath, sandboxRoot);
-  if (!safe) return `🔒 Access Denied: ${error}`;
-  if (!fs.existsSync(resolved)) return `Error: File not found in sandbox: ${filePath}`;
+  if (!safe) {return `🔒 Access Denied: ${error}`;}
+  if (!fs.existsSync(resolved)) {return `Error: File not found in sandbox: ${filePath}`;}
 
   try {
     const content = fs.readFileSync(resolved, "utf-8");
@@ -606,14 +606,14 @@ async function sandboxReadFile(filePath: string, startLine = 1, limit = 200): Pr
     const chunk = lines.slice(startIdx, endIdx).join("\n");
     return `[SANDBOX] File: ${filePath}\nLines: ${startIdx + 1}-${endIdx}/${totalLines}\n\n${chunk}`;
   } catch (err) {
-    return `Error reading sandbox file: ${err}`;
+    return `Error reading sandbox file: ${String(err)}`;
   }
 }
 
 /** Run TypeScript build in the sandbox workspace. */
 function sandboxBuild(): string {
   const sandboxRoot = getSandboxRoot();
-  if (!fs.existsSync(sandboxRoot)) return "Error: Sandbox not found. Run start-ernos.sh first.";
+  if (!fs.existsSync(sandboxRoot)) {return "Error: Sandbox not found. Run start-ernos.sh first.";}
 
   try {
     const output = execSync("npx tsdown 2>&1", {
@@ -632,7 +632,7 @@ function sandboxBuild(): string {
 function sandboxDiff(filePath?: string): string {
   const sandboxRoot = getSandboxRoot();
   const liveRoot = getProjectRoot();
-  if (!fs.existsSync(sandboxRoot)) return "Error: Sandbox not found. Run start-ernos.sh first.";
+  if (!fs.existsSync(sandboxRoot)) {return "Error: Sandbox not found. Run start-ernos.sh first.";}
 
   try {
     const diffTarget = filePath ? filePath : ".";
@@ -647,9 +647,9 @@ function sandboxDiff(filePath?: string): string {
     });
 
     if (!output.trim())
-      return filePath
+      {return filePath
         ? `No differences in ${filePath}`
-        : "No differences between live code and sandbox.";
+        : "No differences between live code and sandbox.";}
     return `[SANDBOX DIFF]${filePath ? ` ${filePath}` : ""}\n${output}`;
   } catch (err: any) {
     return `Error running diff: ${err.message || err}`;
@@ -731,7 +731,7 @@ export const createIntrospectionTools = () => {
       name: "edit_code",
       label: "Edit Code (Sandbox)",
       description:
-        "Write or modify a file in your SANDBOX workspace (~/.ernos/sandbox/). " +
+        "Write or modify a file in your SANDBOX workspace. " +
         "This NEVER touches the live running code. " +
         "Modes: overwrite (replace entire file), append (add to end), insert (add at specific line), replace (find and replace target string). " +
         "Use sandbox_diff to see your changes vs live code.",

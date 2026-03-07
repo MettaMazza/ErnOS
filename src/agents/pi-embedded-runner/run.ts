@@ -554,6 +554,7 @@ export async function runEmbeddedPiAgent(
               undefined,
               params.sessionFile,
             ) as import("@mariozechner/pi-agent-core").AgentMessage[];
+            
             if (messages.length > 0) {
               const estTokens = estimateMessagesTokens(messages);
               const threshold = Math.floor(ctxInfo.tokens * PROACTIVE_COMPACTION_THRESHOLD);
@@ -565,6 +566,27 @@ export async function runEmbeddedPiAgent(
                     `threshold=${threshold} contextWindow=${ctxInfo.tokens} ` +
                     `messages=${messages.length} diagId=${diagId} — triggering compaction`,
                 );
+                // 1. Proactively truncate oversized tool results FIRST
+                // This prevents massive tool results from sabotaging the compaction summary
+                // or blowing up the context even after compaction succeeds.
+                try {
+                  const truncResult = await truncateOversizedToolResultsInSession({
+                    sessionFile: params.sessionFile,
+                    contextWindowTokens: ctxInfo.tokens,
+                    sessionId: params.sessionId,
+                    sessionKey: params.sessionKey,
+                  });
+                  if (truncResult.truncated) {
+                    log.info(
+                      `[proactive-compaction] pre-truncated ${truncResult.truncatedCount} tool results ` +
+                        `diagId=${diagId} to prevent context overflow`,
+                    );
+                  }
+                } catch (truncErr) {
+                  log.warn(`[proactive-compaction] failed to pre-truncate diagId=${diagId}: ${String(truncErr)}`);
+                }
+
+                // 2. Then attempt normal compaction (which pulls fresh from disk)
                 const compactResult = await compactEmbeddedPiSessionDirect({
                   sessionId: params.sessionId,
                   sessionKey: params.sessionKey,

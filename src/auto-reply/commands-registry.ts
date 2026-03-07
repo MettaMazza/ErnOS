@@ -151,9 +151,19 @@ function listNativeSpecsFromCommands(
   commands: ChatCommandDefinition[],
   provider?: string,
 ): NativeCommandSpec[] {
-  return commands
+  const specs = commands
     .filter((command) => command.scope !== "text" && command.nativeName)
     .map((command) => toNativeCommandSpec(command, provider));
+  
+  const seen = new Set<string>();
+  const deduped: NativeCommandSpec[] = [];
+  for (const spec of specs) {
+    if (!seen.has(spec.name)) {
+      seen.add(spec.name);
+      deduped.push(spec);
+    }
+  }
+  return deduped;
 }
 
 export function listNativeCommandSpecs(params?: {

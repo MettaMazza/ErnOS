@@ -42,7 +42,7 @@ export const createMiscTools = (userId: string) => {
       }),
       execute: async (args: any) => {
         const markdown = documentBuilder.renderDocument(args.docId);
-        if (markdown.startsWith("Error:")) return markdown;
+        if (markdown.startsWith("Error:")) {return markdown;}
         return documentGenerator.generatePdf({
           content: markdown,
           title: `Document_${args.docId}`,
@@ -72,7 +72,13 @@ export const createMiscTools = (userId: string) => {
       label: "Get Smart Home Sensors",
       description: "Get a summary of the smart home environment from Home Assistant.",
       parameters: Type.Object({}),
-      execute: async () => JSON.stringify(await homeAssistant.getSensorSummary()),
+      execute: async () => {
+        try {
+          return JSON.stringify(await homeAssistant.getSensorSummary());
+        } catch (e: any) {
+          return `Home Assistant is not configured or unreachable: ${e.message}`;
+        }
+      },
     },
     {
       name: "ha_toggle_device",

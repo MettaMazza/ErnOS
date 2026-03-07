@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import * as path from "path";
 import { Type } from "@sinclair/typebox";
 import { artifactRegistry } from "../../memory/artifact-registry.js";
 
@@ -13,10 +14,14 @@ export const createArtifactTools = () => {
       }),
       execute: async (args: any) => {
         try {
-          if (!fs.existsSync(args.path)) {
-            return `Verification failed. File not found: ${args.path}`;
+          if (typeof args.path !== "string" || !args.path.trim()) {
+            return "Verification failed. The 'path' parameter is required — provide the absolute path to the file to verify.";
           }
-          const buffer = fs.readFileSync(args.path);
+          const resolvedPath = path.resolve(args.path);
+          if (!fs.existsSync(resolvedPath)) {
+            return `Verification failed. File not found: ${resolvedPath}`;
+          }
+          const buffer = fs.readFileSync(resolvedPath);
           const record = artifactRegistry.verifyArtifact(buffer);
           
           if (!record) {

@@ -140,10 +140,7 @@ function shouldSuppressConsoleMessage(message: string): boolean {
   if (SUPPRESSED_CONSOLE_PREFIXES.some((prefix) => message.startsWith(prefix))) {
     return true;
   }
-  if (
-    message.startsWith("[EventQueue] Slow listener detected") &&
-    message.includes("DiscordMessageListener")
-  ) {
+  if (message.startsWith("[EventQueue] Slow listener detected")) {
     return true;
   }
   return false;

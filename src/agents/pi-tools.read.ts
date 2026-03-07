@@ -613,6 +613,7 @@ export function wrapToolWorkspaceRootGuardWithOptions(
   root: string,
   options?: {
     containerWorkdir?: string;
+    allowedPaths?: string[];
   },
 ): AnyAgentTool {
   return {
@@ -629,7 +630,14 @@ export function wrapToolWorkspaceRootGuardWithOptions(
           root,
           containerWorkdir: options?.containerWorkdir,
         });
-        await assertSandboxPath({ filePath: sandboxPath, cwd: root, root });
+        // Allow writes to explicitly allowlisted paths (e.g. ErnOS memory directories)
+        const resolved = path.resolve(sandboxPath);
+        const isAllowed = options?.allowedPaths?.some(
+          (allowed) => resolved.startsWith(path.resolve(allowed)),
+        );
+        if (!isAllowed) {
+          await assertSandboxPath({ filePath: sandboxPath, cwd: root, root });
+        }
       }
       return tool.execute(toolCallId, normalized ?? args, signal, onUpdate);
     },

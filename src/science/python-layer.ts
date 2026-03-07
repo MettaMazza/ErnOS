@@ -18,7 +18,18 @@ const logger = {
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, "..", "..");
+// Find the actual project root by looking for package.json
+let currentDir = __dirname;
+while (!require("fs").existsSync(path.join(currentDir, "package.json"))) {
+  const parent = path.dirname(currentDir);
+  if (parent === currentDir) {
+    // Fallback to process.cwd() if we hit the root of the filesystem without finding package.json
+    currentDir = process.cwd();
+    break;
+  }
+  currentDir = parent;
+}
+const PROJECT_ROOT = currentDir;
 
 // Candidate Python paths (prefer venvs, fall back to system)
 const PYTHON_CANDIDATES = [

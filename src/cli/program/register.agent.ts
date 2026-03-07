@@ -222,11 +222,11 @@ ${formatHelpExamples([
   ['ernos agents set-identity --agent main --name "ErnOS" --emoji "🌱"', "Set name + emoji."],
   ["ernos agents set-identity --agent main --avatar avatars/ernos.png", "Set avatar path."],
   [
-    "ernos agents set-identity --workspace ~/.ernos/workspace --from-identity",
+    "ernos agents set-identity --workspace /var/lib/ernos/workspace --from-identity",
     "Load from IDENTITY.md.",
   ],
   [
-    "ernos agents set-identity --identity-file ~/.ernos/workspace/IDENTITY.md --agent main",
+    "ernos agents set-identity --identity-file /var/lib/ernos/workspace/IDENTITY.md --agent main",
     "Use a specific IDENTITY.md.",
   ],
 ])}

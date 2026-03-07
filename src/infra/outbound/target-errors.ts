@@ -7,7 +7,7 @@ export function missingTargetError(provider: string, hint?: string): Error {
 }
 
 export function ambiguousTargetMessage(provider: string, raw: string, hint?: string): string {
-  return `Ambiguous target "${raw}" for ${provider}. Provide a unique name or an explicit id.${formatTargetHint(hint, true)}`;
+  return `Ambiguous target "${raw}" for ${provider}. Use a tool like \`memory_search\` or \`nodes\` to find the exact numerical target ID.${formatTargetHint(hint, true)}`;
 }
 
 export function ambiguousTargetError(provider: string, raw: string, hint?: string): Error {
@@ -15,7 +15,7 @@ export function ambiguousTargetError(provider: string, raw: string, hint?: strin
 }
 
 export function unknownTargetMessage(provider: string, raw: string, hint?: string): string {
-  return `Unknown target "${raw}" for ${provider}.${formatTargetHint(hint, true)}`;
+  return `Unknown target "${raw}" for ${provider}. Use a tool like \`memory_search\` or \`nodes\` to find the exact numerical target ID.${formatTargetHint(hint, true)}`;
 }
 
 export function unknownTargetError(provider: string, raw: string, hint?: string): Error {

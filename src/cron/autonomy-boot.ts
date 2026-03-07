@@ -16,7 +16,7 @@ import { pushThought } from "./autonomy-log-buffer.js";
 const log = createSubsystemLogger("autonomy");
 
 /** Discord channel ID for autonomy trace posts */
-const AUTONOMY_TRACE_CHANNEL = "1407440722348740738";
+const AUTONOMY_TRACE_CHANNEL = "channel:1407440722348740738";
 
 /**
  * Fire-and-forget: post a message to the autonomy trace Discord channel.
@@ -81,7 +81,7 @@ export function bootAutonomyDaemon(params: {
 
     isUserActive: () => {
       // If an agent is currently processing, treat as active — never trigger autonomy mid-run.
-      if (agentRunning) return true;
+      if (agentRunning) {return true;}
       const idleMs = Date.now() - lastUserActivityTimestamp;
       return idleMs < 10_000; // <10s = user still active
     },
@@ -90,34 +90,66 @@ export function bootAutonomyDaemon(params: {
 
     processThought: async (
       input: string,
-      _context: string,
-      _systemContext: string,
+      context: string,
+      systemContext: string,
     ): Promise<string> => {
-      // Enqueue the autonomous thought into the main session.
-      // The V4 agent pipeline handles its own tool loop internally,
-      // so we only need to fire ONCE per idle detection.
-      params.enqueueSystemEvent(input, {
-        sessionKey: mainSessionKey,
-        contextKey: "AUTONOMY_DREAM",
-      });
+      try {
+        const { runWithObserverAudit } = await import("../agents/pi-embedded.js");
+        const { resolveAgentWorkspaceDir, resolveDefaultAgentId } = await import("../agents/agent-scope.js");
+        const { resolveSessionTranscriptPath } = await import("../config/sessions.js");
+        const { resolveCronSkillsSnapshot } = await import("./isolated-agent/skills-snapshot.js");
+        const crypto = await import("node:crypto");
 
-      // Reset idle timer NOW so the daemon doesn't re-trigger immediately
-      // on the next tick while the agent is still processing.
-      markUserActive();
+        const agentId = resolveDefaultAgentId(cfg);
+        const workspaceDir = resolveAgentWorkspaceDir(cfg, agentId);
+        const runId = crypto.randomUUID();
+        // Give autonomy its own session file
+        const sessionId = "autonomy-daemon";
+        const sessionFile = resolveSessionTranscriptPath(sessionId, agentId);
 
-      // Wait long enough for the agent to actually process the thought.
-      // The agent's own tool loop handles continuation and multi-step work.
-      // After this wait, return <HALT> to end the dream cycle.
-      // The next idle detection will trigger a new cycle if still idle.
-      await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000)); // 5 minutes
+        const skillsSnapshot = resolveCronSkillsSnapshot({
+          workspaceDir,
+          config: cfg,
+          agentId,
+          isFastTestEnv: false,
+        });
 
-      // Reset idle again after processing completes — idle timer starts
-      // from when Ernos FINISHES processing, not from when the thought fired.
-      markUserActive();
+        // Reset idle timer NOW so the daemon doesn't re-trigger immediately
+        markUserActive();
 
-      // Always halt after one thought — let the agent's internal loop handle continuations.
-      // The daemon will re-trigger on next idle detection.
-      return "<HALT>";
+        const result = await runWithObserverAudit({
+          sessionId,
+          sessionKey: mainSessionKey,
+          agentId,
+          sessionFile,
+          workspaceDir,
+          config: cfg,
+          skillsSnapshot,
+          senderIsOwner: true,
+          senderName: "Autonomy Daemon",
+          senderId: "system-autonomy",
+          prompt: input,
+          extraSystemPrompt: systemContext + (context ? `\n\n[CONTEXT HISTORY]\n${context}` : ""),
+          runId,
+          timeoutMs: 10 * 60 * 1000,
+          lane: "autonomy",
+          // Avoid enqueueing events back into the session loop implicitly
+          requireExplicitMessageTarget: true,
+          disableMessageTool: true, // we don't need it to use send_message, we just want thoughts
+        });
+
+        // Extract text from result payloads
+        const responseText = result.payloads?.map((p: any) => p.text).filter(Boolean).join("\n") ?? "";
+
+        // Reset idle again after processing completes
+        markUserActive();
+
+        return responseText || "<HALT>";
+      } catch (err) {
+        log.error(`[IMA] processThought failed: ${err}`);
+        markUserActive();
+        return "<HALT>";
+      }
     },
 
     onThought: async (step: number, thought: string) => {

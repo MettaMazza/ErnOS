@@ -68,7 +68,7 @@ async function callOllamaAudit(prompt: string, model: string): Promise<string> {
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {break;}
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
@@ -76,7 +76,7 @@ async function callOllamaAudit(prompt: string, model: string): Promise<string> {
 
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed) continue;
+        if (!trimmed) {continue;}
         try {
           const chunk = JSON.parse(trimmed) as { message?: { content?: string }; done?: boolean };
           if (chunk.message?.content) {
@@ -105,7 +105,7 @@ async function callOllamaAudit(prompt: string, model: string): Promise<string> {
 
     return result.trim();
   } catch (err) {
-    throw new Error(`Ollama audit fetch aborted or failed: ${err}`);
+    throw new Error(`Ollama audit fetch aborted or failed: ${String(err)}`, { cause: err });
   }
 }
 
@@ -173,11 +173,11 @@ export class ObserverSystem {
     imageCount: number = 0,
     model: string = "qwen3.5:35b",
   ): Promise<AuditResult> {
-    if (!botMsg || botMsg.length < 50) return { allowed: true }; // Short-circuit for simple messages
+    if (!botMsg || botMsg.length < 50) {return { allowed: true };} // Short-circuit for simple messages
 
     // 0. Symbolic Pre-filter (Instantly catch ghost tools)
     const symbolicCheck = this.verifyResponseIntegrity(botMsg.toLowerCase(), toolOutputs);
-    if (symbolicCheck) return symbolicCheck;
+    if (symbolicCheck) {return symbolicCheck;}
 
     // 1. Format current turn tool context (same as v3 AuditAbility)
     const currentContext =
@@ -228,8 +228,8 @@ export class ObserverSystem {
       verdictRaw = await callOllamaAudit(prompt, model);
     } catch (err) {
       // Fail open to prevent paralysis during error (same as v3 audit.py line 108)
-      console.error(`[Observer] Audit LLM call failed: ${err}`);
-      return { allowed: true, reason: `Audit error: ${err}` };
+      console.error(`[Observer] Audit LLM call failed: ${String(err)}`);
+      return { allowed: true, reason: `Audit error: ${String(err)}` };
     }
 
     if (!verdictRaw) {
@@ -242,10 +242,18 @@ export class ObserverSystem {
 
     // 6. Parse JSON verdict
     try {
-      const cleanedRaw = verdictRaw
-        .replace(/^```json\s*/i, "")
-        .replace(/\s*```$/i, "")
-        .trim();
+      let cleanedRaw = verdictRaw;
+      const jsonMatch = verdictRaw.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/i);
+      if (jsonMatch) {
+        cleanedRaw = jsonMatch[1];
+      } else {
+        const start = verdictRaw.indexOf('{');
+        const end = verdictRaw.lastIndexOf('}');
+        if (start !== -1 && end !== -1) {
+          cleanedRaw = verdictRaw.slice(start, end + 1);
+        }
+      }
+      cleanedRaw = cleanedRaw.trim();
       const parsed = JSON.parse(cleanedRaw);
       const isAllowed =
         parsed.verdict === "ALLOWED" || parsed.verdict === "PASS" || parsed.verdict === "APPROVED";

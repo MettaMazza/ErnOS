@@ -55,7 +55,7 @@ export function registerOnboardCommand(program: Command) {
       () =>
         `\n${theme.muted("Docs:")} ${formatDocsLink("/cli/onboard", "docs.ernos.ai/cli/onboard")}\n`,
     )
-    .option("--workspace <dir>", "Agent workspace directory (default: ~/.ernos/workspace)")
+    .option("--workspace <dir>", "Agent workspace directory (default: current working directory)")
     .option(
       "--reset",
       "Reset config + credentials + sessions before running wizard (workspace only with --reset-scope full)",

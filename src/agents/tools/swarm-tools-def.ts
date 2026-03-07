@@ -33,7 +33,10 @@ export function createSwarmTools(userId: string) {
         "Create a step-by-step execution plan for a complex multi-step objective. Returns a structured plan with ordered steps.",
       parameters: Type.Object({
         objective: Type.String({ description: "The complex objective to plan for" }),
-        steps: Type.Array(Type.String(), { description: "Ordered list of step descriptions" }),
+        steps: Type.Array(Type.String(), { 
+          description: "Ordered list of step descriptions",
+          default: []
+        }),
       }),
       execute: async (args: any) => {
         const plan = taskTracker.planTask(args.objective, args.steps);
@@ -50,7 +53,7 @@ export function createSwarmTools(userId: string) {
       }),
       execute: async (args: any) => {
         const updated = taskTracker.completeActiveStep(args.taskId);
-        if (!updated) return "Task not found.";
+        if (!updated) {return "Task not found.";}
         return JSON.stringify(updated, null, 2);
       },
     },
@@ -63,7 +66,7 @@ export function createSwarmTools(userId: string) {
       }),
       execute: async (args: any) => {
         const status = taskTracker.getTaskStatus(args.taskId);
-        if (!status) return "Task not found.";
+        if (!status) {return "Task not found.";}
         return JSON.stringify(status, null, 2);
       },
     },

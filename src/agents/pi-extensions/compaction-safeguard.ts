@@ -198,9 +198,20 @@ export default function compactionSafeguardExtension(api: ExtensionAPI): void {
     const { preparation, customInstructions, signal } = event;
     if (!preparation.messagesToSummarize.some(isRealConversationMessage)) {
       log.warn(
-        "Compaction safeguard: cancelling compaction with no real conversation messages to summarize.",
+        "Compaction safeguard: no real conversation messages to semantic summarize. Bypassing semantic summarization to allow physical compaction to execute.",
       );
-      return { cancel: true };
+      // Construct a valid CompactionResult to satisfy the ExtensionRunner
+      return { 
+        compaction: {
+          summary: "System context reduced due to physical length limits. No semantic human conversation in this block.",
+          firstKeptEntryId: preparation.firstKeptEntryId,
+          tokensBefore: preparation.tokensBefore,
+          details: {
+            readFiles: [],
+            modifiedFiles: []
+          }
+        }
+      };
     }
     const { readFiles, modifiedFiles } = computeFileLists(preparation.fileOps);
     const fileOpsSummary = formatFileOperations(readFiles, modifiedFiles);

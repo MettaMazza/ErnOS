@@ -8,6 +8,7 @@ import {
   createMistralEmbeddingProvider,
   type MistralEmbeddingClient,
 } from "./embeddings-mistral.js";
+import { createOllamaEmbeddingProvider, type OllamaEmbeddingClient } from "./embeddings-ollama.js";
 import { createOpenAiEmbeddingProvider, type OpenAiEmbeddingClient } from "./embeddings-openai.js";
 import { createVoyageEmbeddingProvider, type VoyageEmbeddingClient } from "./embeddings-voyage.js";
 import { importNodeLlamaCpp } from "./node-llama.js";
@@ -34,7 +35,7 @@ export type EmbeddingProvider = {
   embedBatch: (texts: string[]) => Promise<number[][]>;
 };
 
-export type EmbeddingProviderId = "openai" | "local" | "gemini" | "voyage" | "mistral";
+export type EmbeddingProviderId = "openai" | "local" | "gemini" | "voyage" | "mistral" | "ollama";
 export type EmbeddingProviderRequest = EmbeddingProviderId | "auto";
 export type EmbeddingProviderFallback = EmbeddingProviderId | "none";
 
@@ -50,6 +51,7 @@ export type EmbeddingProviderResult = {
   gemini?: GeminiEmbeddingClient;
   voyage?: VoyageEmbeddingClient;
   mistral?: MistralEmbeddingClient;
+  ollama?: OllamaEmbeddingClient;
 };
 
 export type EmbeddingProviderOptions = {
@@ -151,6 +153,10 @@ export async function createEmbeddingProvider(
     if (id === "local") {
       const provider = await createLocalEmbeddingProvider(options);
       return { provider };
+    }
+    if (id === "ollama") {
+      const { provider, client } = await createOllamaEmbeddingProvider(options);
+      return { provider, ollama: client };
     }
     if (id === "gemini") {
       const { provider, client } = await createGeminiEmbeddingProvider(options);

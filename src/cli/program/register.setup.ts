@@ -18,7 +18,7 @@ export function registerSetupCommand(program: Command) {
     )
     .option(
       "--workspace <dir>",
-      "Agent workspace directory (default: ~/.ernos/workspace; stored as agents.defaults.workspace)",
+      "Agent workspace directory (default: process.cwd(); stored as agents.defaults.workspace)",
     )
     .option("--wizard", "Run the interactive onboarding wizard", false)
     .option("--non-interactive", "Run the wizard without prompts", false)
