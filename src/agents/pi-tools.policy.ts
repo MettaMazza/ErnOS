@@ -2,6 +2,7 @@ import { getChannelDock } from "../channels/dock.js";
 import { DEFAULT_SUBAGENT_MAX_SPAWN_DEPTH } from "../config/agent-limits.js";
 import type { ErnOSConfig } from "../config/config.js";
 import { resolveChannelGroupToolsPolicy } from "../config/group-policy.js";
+import { resolveToolsBySender } from "../config/group-policy.js";
 import { normalizeAgentId } from "../routing/session-key.js";
 import { resolveThreadParentSessionKey } from "../sessions/session-key-utils.js";
 import { normalizeMessageChannel } from "../utils/message-channel.js";
@@ -131,6 +132,8 @@ function normalizeProviderKey(value: string): string {
 function resolveGroupContextFromSessionKey(sessionKey?: string | null): {
   channel?: string;
   groupId?: string;
+  kind?: string;
+  peerId?: string;
 } {
   const raw = (sessionKey ?? "").trim();
   if (!raw) {
@@ -146,14 +149,11 @@ function resolveGroupContextFromSessionKey(sessionKey?: string | null): {
     return {};
   }
   const [channel, kind, ...rest] = body;
+  const peerId = rest.join(":").trim() || undefined;
   if (kind !== "group" && kind !== "channel") {
-    return {};
+    return { channel: channel.trim().toLowerCase(), kind, peerId };
   }
-  const groupId = rest.join(":").trim();
-  if (!groupId) {
-    return {};
-  }
-  return { channel: channel.trim().toLowerCase(), groupId };
+  return { channel: channel.trim().toLowerCase(), kind, peerId, groupId: peerId };
 }
 
 function resolveProviderToolPolicy(params: {
@@ -305,6 +305,57 @@ export function resolveGroupToolPolicy(params: {
       senderE164: params.senderE164,
     });
   return pickSandboxToolPolicy(toolsConfig);
+}
+
+export function resolveDirectMessageToolPolicy(params: {
+  config?: ErnOSConfig;
+  sessionKey?: string;
+  spawnedBy?: string | null;
+  messageProvider?: string;
+  accountId?: string | null;
+  senderId?: string | null;
+  senderName?: string | null;
+  senderUsername?: string | null;
+  senderE164?: string | null;
+}): SandboxToolPolicy | undefined {
+  if (!params.config) {
+    return undefined;
+  }
+  const sessionContext = resolveGroupContextFromSessionKey(params.sessionKey);
+  const spawnedContext = resolveGroupContextFromSessionKey(params.spawnedBy);
+  const kind = sessionContext.kind ?? spawnedContext.kind;
+  if (kind !== "dm" && kind !== "direct") {
+    return undefined;
+  }
+  const channelRaw = params.messageProvider ?? sessionContext.channel ?? spawnedContext.channel;
+  const channel = normalizeMessageChannel(channelRaw);
+  if (channel !== "discord") {
+    return undefined;
+  }
+
+  const discordConfig = params.config.channels?.discord;
+  const accountId = params.accountId ?? "main";
+  const account = discordConfig?.accounts?.[accountId];
+  const dmConfig = account?.dm ?? discordConfig?.dm;
+
+  if (!dmConfig) {
+    return undefined;
+  }
+
+  const groupSenderPolicy = resolveToolsBySender({
+    toolsBySender: dmConfig.toolsBySender,
+    senderId: params.senderId,
+    senderName: params.senderName,
+    senderUsername: params.senderUsername,
+    senderE164: params.senderE164,
+  });
+  if (groupSenderPolicy) {
+    return pickSandboxToolPolicy(groupSenderPolicy);
+  }
+  if (dmConfig.tools) {
+    return pickSandboxToolPolicy(dmConfig.tools);
+  }
+  return undefined;
 }
 
 export function isToolAllowedByPolicies(

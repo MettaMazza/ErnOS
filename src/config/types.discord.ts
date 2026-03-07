@@ -20,6 +20,9 @@ export type DiscordDmConfig = {
   enabled?: boolean;
   /** Direct message access policy (default: pairing). */
   policy?: DmPolicy;
+  /** Optional tool policy overrides for DMs. */
+  tools?: GroupToolPolicyConfig;
+  toolsBySender?: GroupToolPolicyBySenderConfig;
   /** Allowlist for DM senders (ids or names). */
   allowFrom?: string[];
   /** If true, allow group DMs (default: false). */

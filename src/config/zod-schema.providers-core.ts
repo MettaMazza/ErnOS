@@ -338,6 +338,8 @@ export const DiscordDmSchema = z
   .object({
     enabled: z.boolean().optional(),
     policy: DmPolicySchema.optional(),
+    tools: ToolPolicySchema.optional(),
+    toolsBySender: ToolPolicyBySenderSchema.optional(),
     allowFrom: DiscordIdListSchema.optional(),
     groupEnabled: z.boolean().optional(),
     groupChannels: DiscordIdListSchema.optional(),

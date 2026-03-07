@@ -765,4 +765,57 @@ describe("Agent-specific tool filtering", () => {
     const details = result?.details as { status?: string } | undefined;
     expect(details?.status).toBe("completed");
   });
+
+  describe("Discord DM Tool Policy enforcement", () => {
+    const adminId = "1299810741984956449";
+    const regularUserId = "999999999999999999";
+
+    const dmConfig: ErnOSConfig = {
+      channels: {
+        discord: {
+          dm: {
+            tools: {
+              deny: ["exec", "bash", "write", "edit", "apply_patch", "process", "opencode"],
+            },
+            toolsBySender: {
+              [`id:${adminId}`]: { allow: ["*"] },
+            },
+          },
+        },
+      },
+    };
+
+    it("denies dangerous root-access tools for regular non-admin users in open DMs", () => {
+      const tools = createErnOSCodingTools({
+        config: dmConfig,
+        sessionKey: `agent:main:discord:direct:${regularUserId}`,
+        messageProvider: "discord",
+        senderId: regularUserId,
+      });
+
+      const toolNames = tools.map((t) => t.name);
+      expect(toolNames).not.toContain("exec");
+      expect(toolNames).not.toContain("write");
+      expect(toolNames).not.toContain("edit");
+      expect(toolNames).not.toContain("bash");
+      expect(toolNames).not.toContain("process");
+      expect(toolNames).toContain("read"); // safe tools allowed
+    });
+
+    it("allows all tools for explicitly granted admin users via toolsBySender", () => {
+      const tools = createErnOSCodingTools({
+        senderIsOwner: true,
+        config: dmConfig,
+        sessionKey: `agent:main:discord:direct:${adminId}`,
+        messageProvider: "discord",
+        senderId: adminId,
+      });
+
+      const toolNames = tools.map((t) => t.name);
+      expect(toolNames).toContain("exec");
+      expect(toolNames).toContain("write");
+      expect(toolNames).toContain("edit");
+      expect(toolNames).toContain("read");
+    });
+  });
 });

@@ -560,6 +560,20 @@ function buildChatCommands(): ChatCommandDefinition[] {
       category: "session",
     }),
     defineChatCommand({
+      key: "clear",
+      nativeName: "clear",
+      description: "Full system clear (wipes memory, logs, sessions). Admin only.",
+      textAlias: "/clear",
+      category: "management",
+    }),
+    defineChatCommand({
+      key: "end",
+      nativeName: "end",
+      description: "Emergency shutdown. Admin only.",
+      textAlias: "/end",
+      category: "management",
+    }),
+    defineChatCommand({
       key: "new",
       nativeName: "new",
       description: "Start a new session.",

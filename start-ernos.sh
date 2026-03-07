@@ -56,7 +56,7 @@ else
 fi
 
 if [ -f "ernos.mjs" ]; then
-  pnpm start $ARGS || node ./ernos.mjs $ARGS
+  pnpm start $ARGS 2>&1 | tee ~/.ernos/logs/ernOS-live.log || node ./ernos.mjs $ARGS 2>&1 | tee ~/.ernos/logs/ernOS-live.log
 else
   echo "Error: ErnOS entrypoint not found."
   exit 1

@@ -26,6 +26,7 @@ import {
   resolveEffectiveToolPolicy,
   resolveGroupToolPolicy,
   resolveSubagentToolPolicy,
+  resolveDirectMessageToolPolicy,
 } from "./pi-tools.policy.js";
 import {
   assertRequiredParams,
@@ -273,6 +274,17 @@ export function createErnOSCodingTools(options?: {
     senderUsername: options?.senderUsername,
     senderE164: options?.senderE164,
   });
+  const dmPolicy = resolveDirectMessageToolPolicy({
+    config: options?.config,
+    sessionKey: options?.sessionKey,
+    spawnedBy: options?.spawnedBy,
+    messageProvider: options?.messageProvider,
+    accountId: options?.agentAccountId,
+    senderId: options?.senderId,
+    senderName: options?.senderName,
+    senderUsername: options?.senderUsername,
+    senderE164: options?.senderE164,
+  });
   const profilePolicy = resolveToolProfilePolicy(profile);
   const providerProfilePolicy = resolveToolProfilePolicy(providerProfile);
 
@@ -300,6 +312,7 @@ export function createErnOSCodingTools(options?: {
     agentPolicy,
     agentProviderPolicy,
     groupPolicy,
+    dmPolicy,
     sandbox?.tools,
     subagentPolicy,
   ]);
@@ -488,6 +501,7 @@ export function createErnOSCodingTools(options?: {
         agentPolicy,
         agentProviderPolicy,
         groupPolicy,
+        dmPolicy,
         sandbox?.tools,
         subagentPolicy,
       ]),
@@ -525,6 +539,7 @@ export function createErnOSCodingTools(options?: {
         groupPolicy,
         agentId,
       }),
+      { policy: dmPolicy, label: "dm tools.allow" },
       { policy: sandbox?.tools, label: "sandbox tools.allow" },
       { policy: subagentPolicy, label: "subagent tools.allow" },
     ],
